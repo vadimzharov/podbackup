@@ -1,4 +1,4 @@
-**This is my first program in Go language. I created it for my use case - to backup files from pods running on my home k8s cluster and then restore them using initContainer - so I don't need to use persistent storage for the cluster and can easy delete/create it back. For example, this tool make backups of my personal HomeAssistant and Vaultwarden**
+**This is my first program in Go language. I created it for my use case - to backup files from pods running on my home k8s cluster and then restore them using initContainer - so I don't need to use persistent storage for the cluster and can easy delete/create the cluster back if required. For example, this tool make backups of my personal HomeAssistant and Vaultwarden**
 ```diff
 **This tool is manupulated with files on S3 bucket. Do not use this tool without specifying proper settings or you may loose your data!**
 ```
