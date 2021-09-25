@@ -6,25 +6,27 @@ import (
 )
 
 type sqlBackupConfig struct {
-	sqlUser          string
-	sqlPassword      string
-	sqlAddr          string
-	sqlPort          string
-	sqlDumpCmdPath   string
-	sqlDumpDir       string
-	sqlDumpFileName  string
-	sqlClientCmdPath string
+	sqlUser           string
+	sqlPassword       string
+	sqlAddr           string
+	sqlPort           string
+	sqlDumpCmdPath    string
+	sqlDumpDir        string
+	sqlDumpFileName   string
+	sqlClientCmdPath  string
+	sqlRestoreMarkDir string
 }
 
 func setDefaultSqlConfig() sqlBackupConfig {
 	return sqlBackupConfig{
-		sqlUser:          "root",
-		sqlAddr:          "127.0.0.1",
-		sqlPort:          "3306",
-		sqlDumpCmdPath:   "/usr/bin/mysqldump",
-		sqlDumpDir:       "/tmp/mysqldump/",
-		sqlDumpFileName:  "mysql.dump",
-		sqlClientCmdPath: "/usr/bin/mysql",
+		sqlUser:           "root",
+		sqlAddr:           "127.0.0.1",
+		sqlPort:           "3306",
+		sqlDumpCmdPath:    "/usr/bin/mysqldump",
+		sqlDumpDir:        "/tmp/mysqldump/",
+		sqlDumpFileName:   "mysql.dump",
+		sqlClientCmdPath:  "/usr/bin/mysql",
+		sqlRestoreMarkDir: "/tmp/mysqlrestore/",
 	}
 }
 

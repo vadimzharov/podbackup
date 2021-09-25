@@ -25,61 +25,96 @@ func restoreSqlDb(cmdargs []string) {
 
 	restoreFiles(cmdargs)
 
-	var mysqlclientargs []string
+	//Check if dump file was restored
 
 	dumpFile := currentSqlConfig.sqlDumpDir + currentSqlConfig.sqlDumpFileName
 
-	mysqlclientargs = append(mysqlclientargs, fmt.Sprintf("-u%s", currentSqlConfig.sqlUser))
-	mysqlclientargs = append(mysqlclientargs, fmt.Sprintf("--password=%s", currentSqlConfig.sqlPassword))
-	mysqlclientargs = append(mysqlclientargs, fmt.Sprintf("-h%s", currentSqlConfig.sqlAddr))
-	mysqlclientargs = append(mysqlclientargs, fmt.Sprintf("-P%s", currentSqlConfig.sqlPort))
-	mysqlclientargs = append(mysqlclientargs, fmt.Sprintf("-e source %s", dumpFile))
+	if _, err := os.Stat(dumpFile); err == nil {
 
-	mysqlrestorecmd := exec.Command(currentSqlConfig.sqlClientCmdPath, mysqlclientargs...)
+		var mysqlclientargs []string
 
-	log.Println("Trying to connect to MySQL DB on", currentSqlConfig.sqlAddr+":"+currentSqlConfig.sqlPort)
+		mysqlclientargs = append(mysqlclientargs, fmt.Sprintf("-u%s", currentSqlConfig.sqlUser))
+		mysqlclientargs = append(mysqlclientargs, fmt.Sprintf("--password=%s", currentSqlConfig.sqlPassword))
+		mysqlclientargs = append(mysqlclientargs, fmt.Sprintf("-h%s", currentSqlConfig.sqlAddr))
+		mysqlclientargs = append(mysqlclientargs, fmt.Sprintf("-P%s", currentSqlConfig.sqlPort))
+		mysqlclientargs = append(mysqlclientargs, fmt.Sprintf("-e source %s", dumpFile))
 
-	for {
+		mysqlrestorecmd := exec.Command(currentSqlConfig.sqlClientCmdPath, mysqlclientargs...)
 
-		mysqlconn, connerr := net.DialTimeout("tcp", net.JoinHostPort(currentSqlConfig.sqlAddr, currentSqlConfig.sqlPort), time.Duration(mysqlConnSleepInternval)*time.Second)
+		log.Println("Trying to connect to MySQL DB on", currentSqlConfig.sqlAddr+":"+currentSqlConfig.sqlPort)
 
-		if connerr != nil {
+		for {
 
-			log.Println("Cannot connect to MySQL, sleeping for", mysqlConnSleepInternval, "seconds...")
+			mysqlconn, connerr := net.DialTimeout("tcp", net.JoinHostPort(currentSqlConfig.sqlAddr, currentSqlConfig.sqlPort), time.Duration(mysqlConnSleepInternval)*time.Second)
 
-			time.Sleep(time.Duration(mysqlConnSleepInternval) * time.Second)
+			if connerr != nil {
+
+				log.Println("Cannot connect to MySQL, sleeping for", mysqlConnSleepInternval, "seconds...")
+
+				time.Sleep(time.Duration(mysqlConnSleepInternval) * time.Second)
+			}
+
+			if mysqlconn != nil {
+				mysqlconn.Close()
+				log.Println("Connected to MySQL DB on", currentSqlConfig.sqlAddr+":"+currentSqlConfig.sqlPort)
+				break
+			}
+
 		}
 
-		if mysqlconn != nil {
-			mysqlconn.Close()
-			log.Println("Connected to MySQL DB on", currentSqlConfig.sqlAddr+":"+currentSqlConfig.sqlPort)
-			break
+		log.Println("Executing mysql command to restore databases from the dump file...")
+
+		var out bytes.Buffer
+		var stderr bytes.Buffer
+
+		mysqlrestorecmd.Stdout = &out
+		mysqlrestorecmd.Stderr = &stderr
+
+		mysqlrestorecmderr := mysqlrestorecmd.Run()
+
+		if mysqlrestorecmderr != nil {
+
+			log.Println(fmt.Sprint(mysqlrestorecmderr) + ": " + stderr.String())
+
 		}
 
-	}
+		log.Println("All databases were restored from the dump file")
 
-	log.Println("Executing mysql command to restore databases from the dump file...")
+		err := os.RemoveAll(currentSqlConfig.sqlDumpDir)
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	var out bytes.Buffer
-	var stderr bytes.Buffer
+		if _, err = os.Stat(currentSqlConfig.sqlRestoreMarkDir); os.IsNotExist(err) {
+			err = os.Mkdir(currentSqlConfig.sqlRestoreMarkDir, os.ModePerm)
+			if err != nil {
+				log.Println(err)
+			}
 
-	mysqlrestorecmd.Stdout = &out
-	mysqlrestorecmd.Stderr = &stderr
+		}
 
-	mysqlrestorecmderr := mysqlrestorecmd.Run()
+		restoredMarkFilePath := currentSqlConfig.sqlRestoreMarkDir + "restored"
 
-	if mysqlrestorecmderr != nil {
+		log.Println("Creating file to mark restore process completed", restoredMarkFilePath)
 
-		fmt.Println(fmt.Sprint(mysqlrestorecmderr) + ": " + stderr.String())
+		restoredMarkFile, err := os.Create(restoredMarkFilePath)
 
-	}
+		if err != nil {
+			log.Println("Cannot create mark file ", err)
+		}
 
-	log.Println("All databases were restored from the dump file")
+		restoredMarkFile.Close()
 
-	err := os.RemoveAll(currentSqlConfig.sqlDumpDir)
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+	} else {
+
+		if currentConfig.forceRestore {
+			log.Fatal("MYSQL dump file was not found in latest archive downloaded from S3 bucket. FORCE_RESTORE set to TRUE, but cannot restore MySQL database from archive, exiting with error...")
+			os.Exit(1)
+		}
+
+		log.Println("MYSQL dump file was not found in latest archive dowloaded from S3 bucket. Skipping MYSQL restore, exiting...")
+		return
+
 	}
 
 }
