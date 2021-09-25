@@ -76,6 +76,10 @@ func Main(cmdargs []string) {
 
 			restoreFiles(cmdargs)
 
+		case "restore-sql":
+
+			restoreSqlDb(cmdargs)
+
 		default:
 
 			printHelp()
