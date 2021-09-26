@@ -40,6 +40,22 @@ func Main(cmdargs []string) {
 				}
 			}
 
+		case "backup-sql-daemon":
+
+			for {
+				select {
+
+				case <-backupTicker.C:
+
+					backupSqlDb()
+
+				case <-pruneTicker.C:
+
+					pruneCosObjects()
+
+				}
+			}
+
 		case "prune":
 
 			pruneCosObjects()
@@ -48,6 +64,10 @@ func Main(cmdargs []string) {
 
 			backupFiles()
 
+		case "backup-sql":
+
+			backupSqlDb()
+
 		case "list":
 
 			listCosFiles()
@@ -55,6 +75,10 @@ func Main(cmdargs []string) {
 		case "restore":
 
 			restoreFiles(cmdargs)
+
+		case "restore-sql":
+
+			restoreSqlDb(cmdargs)
 
 		default:
 
