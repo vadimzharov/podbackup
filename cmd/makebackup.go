@@ -62,34 +62,27 @@ func makeBackup(backupdirpath string, backupfilename string, encryptpassword str
 		}
 		defer f1.Close()
 
+		// Add encrypt password if need to encrypt
+
 		if encryptArchive {
 
-			fileRelativePath := filepath.Join(strings.TrimPrefix(file, backupdirpath))
+			header.SetPassword(encryptpassword)
 
-			enc_file, err := zipWriter.Encrypt(fileRelativePath, encryptpassword)
-			if err != nil {
-				log.Fatal(err)
-			}
+		}
 
-			if _, err := io.Copy(enc_file, f1); err != nil {
-				panic(err)
-			}
+		ar_file, err := zipWriter.CreateHeader(header)
 
-		} else {
+		if err != nil {
+			panic(err)
+		}
 
-			ar_file, err := zipWriter.CreateHeader(header)
-			if err != nil {
-				panic(err)
-			}
-
-			if _, err := io.Copy(ar_file, f1); err != nil {
-				panic(err)
-			}
-
+		if _, err := io.Copy(ar_file, f1); err != nil {
+			panic(err)
 		}
 
 		return nil
 	})
+
 	zipWriter.Close()
 
 }

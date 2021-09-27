@@ -72,7 +72,9 @@ func restoreBackup(restoredir string, backupfilename string, encryptpassword str
 		}
 
 		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+
 		if err != nil {
+			log.Println(err)
 			return fileNames, err
 		}
 
