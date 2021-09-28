@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"log"
+	"math/rand"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -20,9 +22,10 @@ func Main(cmdargs []string) {
 		os.Exit(1)
 	}
 
-	t := time.Now().UTC().Format("20060102150405")
+	//t := time.Now().UTC().Format("20060102150405")
+	rand.Seed(time.Now().UnixNano())
 
-	backuptempdir = "/tmp/podbackup-" + t + "/"
+	backuptempdir = "/tmp/podbackup-" + strconv.Itoa(rand.Intn(99)) + "/"
 
 	log.Println("Creating temp directory " + backuptempdir)
 
