@@ -18,6 +18,7 @@ type backupConfig struct {
 	pruneInverval   int
 	filesKeep       int
 	forceRestore    bool
+	useTar          bool
 }
 
 type backupCreds struct {
@@ -31,11 +32,12 @@ func setDefaultConfig() backupConfig {
 		awsRegion:       "us-east-1",
 		bucketFolder:    "podbackup",
 		keyPrefix:       "podbackup",
-		backupLocalFile: "/tmp/backup.zip",
+		backupLocalFile: "backup.zip",
 		backupInverval:  3600,
 		pruneInverval:   6000,
 		filesKeep:       3,
 		forceRestore:    false,
+		useTar:          false,
 	}
 }
 
@@ -129,6 +131,13 @@ func getConfig() (backupConfigParams backupConfig, backupCredentials backupCreds
 		currentConfig.forceRestore, _ = strconv.ParseBool(forcerestoreenv)
 	} else {
 		log.Println("FORCE_RESTORE environment variable is not set, using the default", currentConfig.forceRestore)
+	}
+
+	if usetarenv := os.Getenv("USE_TAR"); usetarenv != "" {
+		currentConfig.useTar, _ = strconv.ParseBool(usetarenv)
+		log.Println("USE_TAR flag is set - using TAR to make archive")
+	} else {
+		log.Println("USE_TAR environment variable is not set, using the default", currentConfig.useTar)
 	}
 
 	log.Println("The following configuration parameters will be used:")

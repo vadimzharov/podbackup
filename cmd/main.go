@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"log"
+	"os"
 	"time"
 )
 
 var currentConfig backupConfig
 var currentCreds backupCreds
 var isConfigValid bool
+var backuptempdir string
 
 func Main(cmdargs []string) {
 
@@ -15,6 +17,18 @@ func Main(cmdargs []string) {
 
 	if !isConfigValid {
 		log.Fatal("Configuration is not valid, some mandatory variables are not set. Exiting...")
+	}
+
+	t := time.Now().UTC().Format("20060102150405")
+
+	backuptempdir = "/tmp/podbackup-" + t + "/"
+
+	log.Println("Creating temp directory " + backuptempdir)
+
+	err := os.Mkdir(backuptempdir, os.ModePerm)
+	if err != nil {
+		log.Fatal("Cannot create temp directory", backuptempdir, err)
+		os.Exit(1)
 	}
 
 	backupTicker := time.NewTicker(time.Duration(currentConfig.backupInverval) * time.Second)
@@ -90,6 +104,13 @@ func Main(cmdargs []string) {
 
 		printHelp()
 
+	}
+
+	log.Println("Deleting temp directory " + backuptempdir)
+
+	err = os.RemoveAll(backuptempdir)
+	if err != nil {
+		log.Println("Cannot delete temp directory ", backuptempdir, err)
 	}
 
 }

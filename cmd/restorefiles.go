@@ -8,6 +8,8 @@ import (
 func restoreFiles(cmdargs []string) {
 
 	var backupkeyname string
+	var restoredFiles []string
+	var resterr error
 
 	if currentConfig.restoreDir == "" {
 		log.Println("DIR_TO_RESTORE variable is not set or empty, don't know where to restore. Exiting..")
@@ -32,6 +34,14 @@ func restoreFiles(cmdargs []string) {
 		backupkeyname = filesList[0]
 	}
 
+	currentConfig.backupLocalFile = backuptempdir + "backup.zip"
+
+	if currentConfig.useTar {
+
+		currentConfig.backupLocalFile = backuptempdir + "backup.tar.zip"
+
+	}
+
 	downloadedFile := downloadBackup(currentConfig.backupLocalFile, backupkeyname, currentConfig.bucketName, currentCreds.awsKey, currentCreds.awsSecretKey, currentConfig.awsRegion)
 
 	if downloadedFile == nil {
@@ -46,9 +56,34 @@ func restoreFiles(cmdargs []string) {
 
 	} else {
 
-		restoredFiles, err := restoreBackup(currentConfig.restoreDir, *downloadedFile, currentCreds.encryptpassword)
+		if currentConfig.useTar {
 
-		if restoredFiles == nil || err != nil {
+			err := os.RemoveAll(backuptempdir + "restoredzip/")
+			if err != nil {
+				log.Fatal(err)
+				os.Exit(1)
+			}
+
+			err = os.Mkdir(backuptempdir+"restoredzip/", os.ModePerm)
+			if err != nil {
+				log.Fatal(err)
+				os.Exit(1)
+			}
+
+			restoredTarFile, resttarerr := restoreBackup(backuptempdir+"restoredzip/", *downloadedFile, currentCreds.encryptpassword)
+
+			if restoredTarFile == nil || resttarerr != nil {
+				log.Println("File was downloaded, but cannot upzip it")
+			}
+
+			restoredFiles, resterr = restoreTarBackup(currentConfig.restoreDir, backuptempdir+"restoredzip/"+"backup.tar")
+
+		} else {
+
+			restoredFiles, resterr = restoreBackup(currentConfig.restoreDir, *downloadedFile, currentCreds.encryptpassword)
+		}
+
+		if restoredFiles == nil || resterr != nil {
 			log.Println("File was downloaded, but cannot upzip it")
 
 			if currentConfig.forceRestore {
