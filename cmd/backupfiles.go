@@ -17,23 +17,49 @@ func backupFiles() {
 
 	t := time.Now().UTC().Format("20060102150405")
 
-	if currentConfig.useTar {
+	switch currentConfig.archiveType {
+	case "tarzip":
+		{
+			currentConfig.backupLocalFile = backuptempdir + "tararchive/backup.tar"
+			makeTarBackup(currentConfig.backupDir, currentConfig.backupLocalFile)
+			currentConfig.backupLocalFile = backuptempdir + "backup.zip"
+			backupkeyname = currentConfig.bucketFolder + currentConfig.keyPrefix + "-" + t + ".tar.zip"
+			currentConfig.backupDir = backuptempdir + "tararchive/"
 
-		currentConfig.backupLocalFile = backuptempdir + "tararchive/backup.tar"
-		makeTarBackup(currentConfig.backupDir, currentConfig.backupLocalFile)
+			makeBackup(currentConfig.backupDir, currentConfig.backupLocalFile, currentCreds.encryptpassword)
+		}
 
-		currentConfig.backupLocalFile = backuptempdir + "backup.zip"
-		backupkeyname = currentConfig.bucketFolder + currentConfig.keyPrefix + "-" + t + ".tar.zip"
-		currentConfig.backupDir = backuptempdir + "tararchive/"
+	case "zip":
+		{
+			currentConfig.backupLocalFile = backuptempdir + "backup.zip"
+			backupkeyname = currentConfig.bucketFolder + currentConfig.keyPrefix + "-" + t + ".zip"
+			makeBackup(currentConfig.backupDir, currentConfig.backupLocalFile, currentCreds.encryptpassword)
+		}
 
-		makeBackup(currentConfig.backupDir, currentConfig.backupLocalFile, currentCreds.encryptpassword)
+	default:
 
-	} else {
-		currentConfig.backupLocalFile = backuptempdir + "backup.zip"
-		backupkeyname = currentConfig.bucketFolder + currentConfig.keyPrefix + "-" + t + ".zip"
-		makeBackup(currentConfig.backupDir, currentConfig.backupLocalFile, currentCreds.encryptpassword)
+		log.Panic("ARCHIVE_TYPE environment variable is not correct (should be zip or tarzip")
+		os.Exit(1)
 
 	}
+
+	//if currentConfig.useTar {
+	//
+	//	currentConfig.backupLocalFile = backuptempdir + "tararchive/backup.tar"
+	//	makeTarBackup(currentConfig.backupDir, currentConfig.backupLocalFile)
+
+	//	currentConfig.backupLocalFile = backuptempdir + "backup.zip"
+	//	backupkeyname = currentConfig.bucketFolder + currentConfig.keyPrefix + "-" + t + ".tar.zip"
+	//	currentConfig.backupDir = backuptempdir + "tararchive/"
+
+	//	makeBackup(currentConfig.backupDir, currentConfig.backupLocalFile, currentCreds.encryptpassword)
+
+	//} else {
+	//	currentConfig.backupLocalFile = backuptempdir + "backup.zip"
+	//	backupkeyname = currentConfig.bucketFolder + currentConfig.keyPrefix + "-" + t + ".zip"
+	//	makeBackup(currentConfig.backupDir, currentConfig.backupLocalFile, currentCreds.encryptpassword)
+
+	//}
 
 	uploadBackup(currentConfig.backupLocalFile, backupkeyname, currentConfig.bucketName, currentCreds.awsKey, currentCreds.awsSecretKey, currentConfig.awsRegion)
 
