@@ -18,7 +18,7 @@ type backupConfig struct {
 	pruneInverval   int
 	filesKeep       int
 	forceRestore    bool
-	useTar          bool
+	archiveType     string
 }
 
 type backupCreds struct {
@@ -37,7 +37,7 @@ func setDefaultConfig() backupConfig {
 		pruneInverval:   6000,
 		filesKeep:       3,
 		forceRestore:    false,
-		useTar:          false,
+		archiveType:     "zip",
 	}
 }
 
@@ -133,11 +133,11 @@ func getConfig() (backupConfigParams backupConfig, backupCredentials backupCreds
 		log.Println("FORCE_RESTORE environment variable is not set, using the default", currentConfig.forceRestore)
 	}
 
-	if usetarenv := os.Getenv("USE_TAR"); usetarenv != "" {
-		currentConfig.useTar, _ = strconv.ParseBool(usetarenv)
-		log.Println("USE_TAR flag is set - using TAR to make archive")
+	if archivetypeenv := os.Getenv("ARCHIVE_TYPE"); archivetypeenv != "" {
+		currentConfig.archiveType = archivetypeenv
+		log.Println("Using", currentConfig.archiveType, " archive type")
 	} else {
-		log.Println("USE_TAR environment variable is not set, using the default", currentConfig.useTar)
+		log.Println("ARCHIVE_TYPE environment variable is not set, using the default", currentConfig.archiveType)
 	}
 
 	log.Println("The following configuration parameters will be used:")

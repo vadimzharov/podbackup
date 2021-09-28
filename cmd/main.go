@@ -17,6 +17,7 @@ func Main(cmdargs []string) {
 
 	if !isConfigValid {
 		log.Fatal("Configuration is not valid, some mandatory variables are not set. Exiting...")
+		os.Exit(1)
 	}
 
 	t := time.Now().UTC().Format("20060102150405")

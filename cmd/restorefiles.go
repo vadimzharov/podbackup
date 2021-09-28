@@ -34,13 +34,7 @@ func restoreFiles(cmdargs []string) {
 		backupkeyname = filesList[0]
 	}
 
-	currentConfig.backupLocalFile = backuptempdir + "backup.zip"
-
-	if currentConfig.useTar {
-
-		currentConfig.backupLocalFile = backuptempdir + "backup.tar.zip"
-
-	}
+	currentConfig.backupLocalFile = backuptempdir + "backup.archive"
 
 	downloadedFile := downloadBackup(currentConfig.backupLocalFile, backupkeyname, currentConfig.bucketName, currentCreds.awsKey, currentCreds.awsSecretKey, currentConfig.awsRegion)
 
@@ -54,10 +48,12 @@ func restoreFiles(cmdargs []string) {
 
 		os.Exit(0)
 
-	} else {
+	}
 
-		if currentConfig.useTar {
+	switch currentConfig.archiveType {
 
+	case "tarzip":
+		{
 			err := os.RemoveAll(backuptempdir + "restoredzip/")
 			if err != nil {
 				log.Fatal(err)
@@ -78,21 +74,30 @@ func restoreFiles(cmdargs []string) {
 
 			restoredFiles, resterr = restoreTarBackup(currentConfig.restoreDir, backuptempdir+"restoredzip/"+"backup.tar")
 
-		} else {
+		}
 
+	case "zip":
+		{
 			restoredFiles, resterr = restoreBackup(currentConfig.restoreDir, *downloadedFile, currentCreds.encryptpassword)
-		}
-
-		if restoredFiles == nil || resterr != nil {
-			log.Println("File was downloaded, but cannot upzip it")
-
-			if currentConfig.forceRestore {
-				log.Fatal("Cannot restore files from archive. Cannot continue due to FORCE_RESTORE set to True. Exiting with error...")
-			}
 
 		}
 
-		os.Remove(currentConfig.backupLocalFile)
+	default:
+
+		log.Panic("ARCHIVE_TYPE environment variable is not correct (should be zip or tarzip")
+		os.Exit(1)
+
 	}
+
+	if restoredFiles == nil || resterr != nil {
+		log.Println("File was downloaded, but cannot uppack it")
+
+		if currentConfig.forceRestore {
+			log.Fatal("Cannot restore files from archive. Cannot continue due to FORCE_RESTORE set to True. Exiting with error...")
+		}
+
+	}
+
+	os.Remove(currentConfig.backupLocalFile)
 
 }
