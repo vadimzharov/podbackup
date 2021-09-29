@@ -18,6 +18,7 @@ type backupConfig struct {
 	pruneInverval   int
 	filesKeep       int
 	forceRestore    bool
+	archiveType     string
 }
 
 type backupCreds struct {
@@ -31,11 +32,12 @@ func setDefaultConfig() backupConfig {
 		awsRegion:       "us-east-1",
 		bucketFolder:    "podbackup",
 		keyPrefix:       "podbackup",
-		backupLocalFile: "/tmp/backup.zip",
+		backupLocalFile: "backup.zip",
 		backupInverval:  3600,
 		pruneInverval:   6000,
 		filesKeep:       3,
 		forceRestore:    false,
+		archiveType:     "zip",
 	}
 }
 
@@ -129,6 +131,13 @@ func getConfig() (backupConfigParams backupConfig, backupCredentials backupCreds
 		currentConfig.forceRestore, _ = strconv.ParseBool(forcerestoreenv)
 	} else {
 		log.Println("FORCE_RESTORE environment variable is not set, using the default", currentConfig.forceRestore)
+	}
+
+	if archivetypeenv := os.Getenv("ARCHIVE_TYPE"); archivetypeenv != "" {
+		currentConfig.archiveType = archivetypeenv
+		log.Println("Using", currentConfig.archiveType, " archive type")
+	} else {
+		log.Println("ARCHIVE_TYPE environment variable is not set, using the default", currentConfig.archiveType)
 	}
 
 	log.Println("The following configuration parameters will be used:")

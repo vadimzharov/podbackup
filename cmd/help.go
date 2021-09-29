@@ -22,6 +22,7 @@ const (
 	BACKUP_INTERVAL - interval in seconds to run periodical backup (if running as daemon). 3600 seconds by default.
 	COPIES_TO_KEEP - number of copies to keep in S3 folder when executing pruning.
 	FORCE_RESTORE - set to True if requied tool to fail (exit with code 1) if it cannot restore files from backup.
+	ARCHIVE_TYPE - by default set to 'zip'. Set to 'tarzip' to archive all files as tar archive and then zip it (encrypted if ENCRYPT_PASSWORD is set). This is approach if you need to save original ownership and mode of the files.
 	
 	Commands:
 	backup			run one time backup

@@ -8,6 +8,8 @@ import (
 func restoreFiles(cmdargs []string) {
 
 	var backupkeyname string
+	var restoredFiles []string
+	var resterr error
 
 	if currentConfig.restoreDir == "" {
 		log.Println("DIR_TO_RESTORE variable is not set or empty, don't know where to restore. Exiting..")
@@ -32,6 +34,8 @@ func restoreFiles(cmdargs []string) {
 		backupkeyname = filesList[0]
 	}
 
+	currentConfig.backupLocalFile = backuptempdir + "backup.archive"
+
 	downloadedFile := downloadBackup(currentConfig.backupLocalFile, backupkeyname, currentConfig.bucketName, currentCreds.awsKey, currentCreds.awsSecretKey, currentConfig.awsRegion)
 
 	if downloadedFile == nil {
@@ -44,20 +48,56 @@ func restoreFiles(cmdargs []string) {
 
 		os.Exit(0)
 
-	} else {
+	}
 
-		restoredFiles, err := restoreBackup(currentConfig.restoreDir, *downloadedFile, currentCreds.encryptpassword)
+	switch currentConfig.archiveType {
 
-		if restoredFiles == nil || err != nil {
-			log.Println("File was downloaded, but cannot upzip it")
-
-			if currentConfig.forceRestore {
-				log.Fatal("Cannot restore files from archive. Cannot continue due to FORCE_RESTORE set to True. Exiting with error...")
+	case "tarzip":
+		{
+			err := os.RemoveAll(backuptempdir + "restoredzip/")
+			if err != nil {
+				log.Fatal(err)
+				os.Exit(1)
 			}
+
+			err = os.Mkdir(backuptempdir+"restoredzip/", os.ModePerm)
+			if err != nil {
+				log.Fatal(err)
+				os.Exit(1)
+			}
+
+			restoredTarFile, resttarerr := restoreBackup(backuptempdir+"restoredzip/", *downloadedFile, currentCreds.encryptpassword)
+
+			if restoredTarFile == nil || resttarerr != nil {
+				log.Println("File was downloaded, but cannot upzip it")
+			}
+
+			restoredFiles, resterr = restoreTarBackup(currentConfig.restoreDir, backuptempdir+"restoredzip/"+"backup.tar")
 
 		}
 
-		os.Remove(currentConfig.backupLocalFile)
+	case "zip":
+		{
+			restoredFiles, resterr = restoreBackup(currentConfig.restoreDir, *downloadedFile, currentCreds.encryptpassword)
+
+		}
+
+	default:
+
+		log.Panic("ARCHIVE_TYPE environment variable is not correct (should be zip or tarzip")
+		os.Exit(1)
+
 	}
+
+	if restoredFiles == nil || resterr != nil {
+		log.Println("File was downloaded, but cannot uppack it")
+
+		if currentConfig.forceRestore {
+			log.Fatal("Cannot restore files from archive. Cannot continue due to FORCE_RESTORE set to True. Exiting with error...")
+		}
+
+	}
+
+	os.Remove(currentConfig.backupLocalFile)
 
 }
