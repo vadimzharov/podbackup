@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"archive/tar"
+	"compress/gzip"
 	"io"
 	"log"
 	"os"
@@ -26,14 +27,26 @@ func makeTarBackup(backupdirpath string, backupfilename string) {
 	log.Println("Making TAR archive from", backupdirpath, "to", backupfilename)
 
 	localArchive, err := os.Create(backupfilename)
+
 	if err != nil {
 		log.Println("Failed to create localfile ", backupfilename, err)
 		panic(err)
 	}
 
+	defer localArchive.Close()
+
 	tarWriter := tar.NewWriter(localArchive)
 
-	defer localArchive.Close()
+	if currentConfig.archiveType == "targz" {
+
+		gzWriter := gzip.NewWriter(localArchive)
+
+		defer gzWriter.Close()
+
+		tarWriter = tar.NewWriter(gzWriter)
+	}
+
+	defer tarWriter.Close()
 
 	filepath.Walk(backupdirpath, func(file string, fi os.FileInfo, err error) error {
 
@@ -74,6 +87,6 @@ func makeTarBackup(backupdirpath string, backupfilename string) {
 		return nil
 	})
 
-	tarWriter.Close()
+	//tarWriter.Close()
 
 }

@@ -24,7 +24,7 @@ func Main(cmdargs []string) {
 
 	rand.Seed(time.Now().UnixNano())
 
-	backuptempdir = "/tmp/podbackup-" + strconv.Itoa(rand.Intn(99)) + "/"
+	backuptempdir = "/tmp/podbackup-" + strconv.Itoa(rand.Intn(9999)) + "/"
 
 	err := os.Mkdir(backuptempdir, os.ModePerm)
 	if err != nil {
