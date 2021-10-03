@@ -17,12 +17,21 @@ const (
 
 	Optionally set the following variables:
 	S3_BUCKET_FOLDER - folder where to store ZIP archive. "podbackup" by default
+
 	S3_FILE_PREFIX - ZIP archive name prefix. "podbackup" by default. Full filename will be <prefix>-<timestamp>.zip
+
 	ENCRYPT_PASSWORD - encrypt/decrypt ZIP archives using this password. 
+
 	BACKUP_INTERVAL - interval in seconds to run periodical backup (if running as daemon). 3600 seconds by default.
+
 	COPIES_TO_KEEP - number of copies to keep in S3 folder when executing pruning.
+
 	FORCE_RESTORE - set to True if requied tool to fail (exit with code 1) if it cannot restore files from backup.
-	ARCHIVE_TYPE - by default set to 'zip'. Set to 'tarzip' to archive all files as tar archive and then zip it (encrypted if ENCRYPT_PASSWORD is set). This is approach if you need to save original ownership and mode of the files.
+	
+	ARCHIVE_TYPE - 	by default set to 'zip' - tool will create ZIP archive (and encrypt it if ENCRYPT_PASSWORD is set). 
+	            	Set to 'tarzip' - to archive all files as tar archive and then zip it (encrypted if ENCRYPT_PASSWORD is set).
+			Use it if you need to save original ownership and mode of the files.
+			Set to 'targz' - to archive all files as tar compressed archive. File mode and ownership persist during unpacking, however encryption is not supported.
 	
 	Commands:
 	backup			run one time backup
