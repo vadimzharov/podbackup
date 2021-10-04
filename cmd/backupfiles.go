@@ -26,9 +26,10 @@ func backupFiles() {
 
 			currentConfig.backupLocalFile = backuptempdir + "backup.zip"
 			backupkeyname = currentConfig.bucketFolder + currentConfig.keyPrefix + "-" + t + ".tar.zip"
-			currentConfig.backupDir = backuptempdir + "tararchive/"
 
-			makeBackup(currentConfig.backupDir, currentConfig.backupLocalFile, currentCreds.encryptpassword)
+			makeBackup(backuptempdir+"tararchive/", currentConfig.backupLocalFile, currentCreds.encryptpassword)
+
+			os.Remove(currentConfig.backupDir + "backup.tar")
 		}
 
 	case "targz":
