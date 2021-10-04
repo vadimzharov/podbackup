@@ -21,24 +21,36 @@ func backupFiles() {
 	case "tarzip":
 		{
 			currentConfig.backupLocalFile = backuptempdir + "tararchive/backup.tar"
+
 			makeTarBackup(currentConfig.backupDir, currentConfig.backupLocalFile)
+
 			currentConfig.backupLocalFile = backuptempdir + "backup.zip"
 			backupkeyname = currentConfig.bucketFolder + currentConfig.keyPrefix + "-" + t + ".tar.zip"
-			currentConfig.backupDir = backuptempdir + "tararchive/"
 
-			makeBackup(currentConfig.backupDir, currentConfig.backupLocalFile, currentCreds.encryptpassword)
+			makeBackup(backuptempdir+"tararchive/", currentConfig.backupLocalFile, currentCreds.encryptpassword)
+
+			os.Remove(currentConfig.backupDir + "backup.tar")
+		}
+
+	case "targz":
+		{
+			currentConfig.backupLocalFile = backuptempdir + "backup.tar.gz"
+			backupkeyname = currentConfig.bucketFolder + currentConfig.keyPrefix + "-" + t + ".tar.gz"
+
+			makeTarBackup(currentConfig.backupDir, currentConfig.backupLocalFile)
 		}
 
 	case "zip":
 		{
 			currentConfig.backupLocalFile = backuptempdir + "backup.zip"
 			backupkeyname = currentConfig.bucketFolder + currentConfig.keyPrefix + "-" + t + ".zip"
+
 			makeBackup(currentConfig.backupDir, currentConfig.backupLocalFile, currentCreds.encryptpassword)
 		}
 
 	default:
 
-		log.Panic("ARCHIVE_TYPE environment variable is not correct (should be zip or tarzip")
+		log.Panic("ARCHIVE_TYPE environment variable is not correct (should be zip, tarzip or targz")
 		os.Exit(1)
 
 	}

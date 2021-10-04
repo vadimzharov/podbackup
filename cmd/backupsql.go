@@ -40,6 +40,7 @@ func backupSqlDb() {
 	mysqldumpargs = append(mysqldumpargs, fmt.Sprintf("-P%s", currentSqlConfig.sqlPort))
 	mysqldumpargs = append(mysqldumpargs, fmt.Sprintf("-r%s", dumpFile))
 	mysqldumpargs = append(mysqldumpargs, "--all-databases")
+	mysqldumpargs = append(mysqldumpargs, "--flush-privileges")
 
 	mysqldumpcmd := exec.Command(currentSqlConfig.sqlDumpCmdPath, mysqldumpargs...)
 

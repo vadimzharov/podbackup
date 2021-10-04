@@ -3,6 +3,7 @@ package cmd
 import (
 	"log"
 	"os"
+	"path/filepath"
 )
 
 func restoreFiles(cmdargs []string) {
@@ -34,7 +35,7 @@ func restoreFiles(cmdargs []string) {
 		backupkeyname = filesList[0]
 	}
 
-	currentConfig.backupLocalFile = backuptempdir + "backup.archive"
+	currentConfig.backupLocalFile = backuptempdir + filepath.Base(backupkeyname)
 
 	downloadedFile := downloadBackup(currentConfig.backupLocalFile, backupkeyname, currentConfig.bucketName, currentCreds.awsKey, currentCreds.awsSecretKey, currentConfig.awsRegion)
 
@@ -56,23 +57,30 @@ func restoreFiles(cmdargs []string) {
 		{
 			err := os.RemoveAll(backuptempdir + "restoredzip/")
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal("Cannot create temp directory:", backuptempdir+"restoredzip/ :", err)
 				os.Exit(1)
 			}
 
 			err = os.Mkdir(backuptempdir+"restoredzip/", os.ModePerm)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal("Cannot create temp directory:", backuptempdir+"restoredzip/ :", err)
 				os.Exit(1)
 			}
 
 			restoredTarFile, resttarerr := restoreBackup(backuptempdir+"restoredzip/", *downloadedFile, currentCreds.encryptpassword)
 
 			if restoredTarFile == nil || resttarerr != nil {
-				log.Println("File was downloaded, but cannot upzip it")
+				log.Println("Zip file was downloaded, but cannot unzip it")
 			}
 
 			restoredFiles, resterr = restoreTarBackup(currentConfig.restoreDir, backuptempdir+"restoredzip/"+"backup.tar")
+
+		}
+
+	case "targz":
+		{
+
+			restoredFiles, resterr = restoreTarBackup(currentConfig.restoreDir, *downloadedFile)
 
 		}
 
@@ -90,10 +98,11 @@ func restoreFiles(cmdargs []string) {
 	}
 
 	if restoredFiles == nil || resterr != nil {
-		log.Println("File was downloaded, but cannot uppack it")
+		log.Println("Archive file was downloaded, but cannot unpack it")
 
 		if currentConfig.forceRestore {
 			log.Fatal("Cannot restore files from archive. Cannot continue due to FORCE_RESTORE set to True. Exiting with error...")
+			os.Exit(1)
 		}
 
 	}

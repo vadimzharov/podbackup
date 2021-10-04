@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"archive/tar"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"log"
@@ -24,7 +25,20 @@ func restoreTarBackup(restoredir string, backupfilename string) ([]string, error
 
 	tarReader := tar.NewReader(localTarArchive)
 
-	os.MkdirAll(restoredir, 0755)
+	if currentConfig.archiveType == "targz" {
+
+		gzReader, err := gzip.NewReader(localTarArchive)
+
+		if err != nil {
+			return fileNames, err
+		}
+
+		defer gzReader.Close()
+
+		tarReader = tar.NewReader(gzReader)
+	}
+
+	os.MkdirAll(restoredir, os.ModePerm)
 
 	for {
 
@@ -46,12 +60,18 @@ func restoreTarBackup(restoredir string, backupfilename string) ([]string, error
 		fileNames = append(fileNames, fpath)
 
 		if fi.Mode().IsDir() {
-			os.MkdirAll(fpath, os.ModePerm)
+
+			os.MkdirAll(fpath, 0755)
+
+			log.Println("Creating directory", fpath)
+
 			err = os.Chown(fpath, header.Uid, header.Gid)
+
 			if err != nil {
 				log.Println("Cannot set ownership", header.Uid, ":", header.Gid, "to file", fpath)
 				log.Println(err)
 			}
+
 			continue
 		}
 
