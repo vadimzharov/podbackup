@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 	"strconv"
+	//	"strings"
+	"time"
 )
 
 type backupConfig struct {
@@ -14,8 +16,8 @@ type backupConfig struct {
 	bucketFolder    string
 	keyPrefix       string
 	backupLocalFile string
-	backupInverval  int
-	pruneInverval   int
+	backupInverval  time.Duration
+	pruneInverval   time.Duration
 	filesKeep       int
 	forceRestore    bool
 	archiveType     string
@@ -33,8 +35,8 @@ func setDefaultConfig() backupConfig {
 		bucketFolder:    "podbackup",
 		keyPrefix:       "podbackup",
 		backupLocalFile: "backup.zip",
-		backupInverval:  3600,
-		pruneInverval:   6000,
+		backupInverval:  3600000000000,
+		pruneInverval:   7200000000000,
 		filesKeep:       3,
 		forceRestore:    false,
 		archiveType:     "zip",
@@ -110,9 +112,12 @@ func getConfig() (backupConfigParams backupConfig, backupCredentials backupCreds
 	}
 
 	if backupinvervalenv := os.Getenv("BACKUP_INTERVAL"); backupinvervalenv != "" {
-		currentConfig.backupInverval, _ = strconv.Atoi(backupinvervalenv)
+
+		currentConfig.backupInverval = parsedInterval(backupinvervalenv)
+
 	} else {
 		log.Println("BACKUP_INTERVAL environment variable is not set, using the default", currentConfig.backupInverval)
+
 	}
 
 	if filesKeepenv := os.Getenv("COPIES_TO_KEEP"); filesKeepenv != "" {
@@ -122,7 +127,7 @@ func getConfig() (backupConfigParams backupConfig, backupCredentials backupCreds
 	}
 
 	if pruneinvervalenv := os.Getenv("PRUNE_INTERVAL"); pruneinvervalenv != "" {
-		currentConfig.pruneInverval, _ = strconv.Atoi(pruneinvervalenv)
+		currentConfig.pruneInverval = parsedInterval(pruneinvervalenv)
 	} else {
 		log.Println("PRUNE_INTERVAL environment variable is not set, using the default", currentConfig.pruneInverval)
 	}
@@ -144,4 +149,45 @@ func getConfig() (backupConfigParams backupConfig, backupCredentials backupCreds
 	log.Printf("%+v\n", currentConfig)
 
 	return currentConfig, currentCreds, isConfigValid
+}
+
+func parsedInterval(cfgInterval string) time.Duration {
+
+	var interval time.Duration
+	var convinterval int
+
+	convinterval, converr := strconv.Atoi(cfgInterval)
+
+	if converr == nil {
+
+		interval = time.Duration(convinterval) * time.Second
+
+	} else {
+
+		intinterval, _ := strconv.Atoi(cfgInterval[:len(cfgInterval)-1])
+
+		switch cfgInterval[len(cfgInterval)-1:] {
+
+		case "m":
+			{
+				interval = time.Duration(intinterval) * time.Minute
+			}
+
+		case "h":
+			{
+				interval = time.Duration(intinterval) * time.Hour
+			}
+
+		default:
+			{
+				log.Panic("Cannot convert interval variable", cfgInterval, ". Check BACKUP_INTERVAL or PRUNE_INTERVAL environment variables")
+				os.Exit(1)
+			}
+
+		}
+
+	}
+
+	return interval
+
 }

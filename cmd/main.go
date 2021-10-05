@@ -32,14 +32,17 @@ func Main(cmdargs []string) {
 		os.Exit(1)
 	}
 
-	backupTicker := time.NewTicker(time.Duration(currentConfig.backupInverval) * time.Second)
+	//backupTicker := time.NewTicker(time.Duration(currentConfig.backupInverval) * time.Minute)
+	backupTicker := time.NewTicker(currentConfig.backupInverval)
 
-	pruneTicker := time.NewTicker(time.Duration(currentConfig.pruneInverval) * time.Second)
+	pruneTicker := time.NewTicker(currentConfig.pruneInverval)
 
 	if len(cmdargs) > 1 {
 
 		switch cmdargs[1] {
 		case "backup-daemon":
+
+			log.Println("Working as a daemon to make files backup, backup interval is:", currentConfig.backupInverval, ", and pruning interval is:", currentConfig.pruneInverval)
 
 			for {
 				select {
@@ -56,6 +59,8 @@ func Main(cmdargs []string) {
 			}
 
 		case "backup-sql-daemon":
+
+			log.Println("Working as a daemon to make SQL database backup, backup interval is:", currentConfig.backupInverval, ", and pruning interval is:", currentConfig.pruneInverval)
 
 			for {
 				select {
