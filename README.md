@@ -2,7 +2,7 @@
 ```diff
 **This tool is manupulating with files on S3 bucket. Do not use this tool without specifying proper settings or you may loose your data!**
 ```
-# Tool to backup and restore local directories or MySQL databaseto AWS S3 storage
+## Tool to backup and restore local directories or MySQL database (via dump) to AWS S3 storage
 
 Simple tool to archive all files and subdirectories of desired local directory as one ZIP or TAR archive file and upload this file to S3 bucket, to desired folder.
 Tool can also make mysql dump and then archive and upload it to S3 bucket/folder.
@@ -38,37 +38,43 @@ Optionally, set the following variables:
 			            Use it if you need to save original ownership and mode of the files.
 			            Set to `targz` - to archive all files as tar compressed archive. File mode and ownership persist during unpacking, however encryption is not supported.
 	
-## Usage
+### Usage
 
 Run 
 `podbackup <command>`
 
 where commands are:
 
-`backup` - run one time backup and backup all files from folder `DIR_TO_BACKUP` to S3 object storage.
+* `backup` - run one time backup and backup all files from folder `DIR_TO_BACKUP` to S3 object storage.
 
-`backup-sql` - run one time backup to make MySQL dump based on `MYSQL*` variables.
+* `backup-sql` - run one time backup to make MySQL dump based on `MYSQL*` variables.
 
-`backup-daemon` - work as daemon and run periodical backups according to BACKUP_INTERVAL environment variable (`1h` by default). In this mode daemon will do automatic pruning (default PRUNE_INTERVAL is `2h`) and keep only # of copies based on COPIES_TO_KEEP environment variable (3 by default). **All other files with prefix `S3_FILE_PREFIX` in the folder `S3_BUCKET_FOLDER` will be destroyed.**
+* `backup-daemon` - work as daemon and run periodical backups according to BACKUP_INTERVAL environment variable (`1h` by default). In this mode daemon will do automatic pruning (default PRUNE_INTERVAL is `2h`) and keep only # of copies based on COPIES_TO_KEEP environment variable (3 by default). **All other files with prefix `S3_FILE_PREFIX` in the folder `S3_BUCKET_FOLDER` will be destroyed.**
 
-`backup-sql-daemon` - work as daemon and run periodical MySQL database dumps according to BACKUP_INTERVAL environment variable (`1h` by default). In this mode daemon will do automatic pruning (default PRUNE_INTERVAL is `2h`) and keep only # of copies based on COPIES_TO_KEEP environment variable (3 by default). **All other files with prefix `S3_FILE_PREFIX` in the folder `S3_BUCKET_FOLDER` will be destroyed.**
+* `backup-sql-daemon` - work as daemon and run periodical MySQL database dumps according to BACKUP_INTERVAL environment variable (`1h` by default). In this mode daemon will do automatic pruning (default PRUNE_INTERVAL is `2h`) and keep only # of copies based on COPIES_TO_KEEP environment variable (3 by default). **All other files with prefix `S3_FILE_PREFIX` in the folder `S3_BUCKET_FOLDER` will be destroyed.**
 
-`prune` - manually run pruning (delete all old archives). **All other files with prefix `S3_FILE_PREFIX` in the folder `S3_BUCKET_FOLDER` will be destroyed.**
+* `prune` - manually run pruning (delete all old archives). **All other files with prefix `S3_FILE_PREFIX` in the folder `S3_BUCKET_FOLDER` will be destroyed.**
 
-`list` - list files in S3 folder (based on `S3_BUCKET_FOLDER` environment variable).
+* `list` - list files in S3 folder (based on `S3_BUCKET_FOLDER` environment variable).
 	
-`restore` - download file from S3 and restore files to directory (DIR_TO_RESTORE environment variable). Most recent archive will be used. To restore from another file provide archive name based on 'podbackup list' output (like podbackup/podbackup-20210802213807.zip) as an argument for `restore` command.
+* `restore` - download file from S3 and restore files to directory (DIR_TO_RESTORE environment variable). Most recent archive will be used. To restore from another file provide archive name based on 'podbackup list' output (like podbackup/podbackup-20210802213807.zip) as an argument for `restore` command.
 
-`restore-sql` - download file from S3 and restore MySQL database. Most recent archive will be used. To restore from another file provide archive name based on 'podbackup list' output (like podbackup/podbackup-20210802213807.zip) as an argument for `restore-sql` command.
+* `restore-sql` - download file from S3 and restore MySQL database. Most recent archive will be used. To restore from another file provide archive name based on 'podbackup list' output (like podbackup/podbackup-20210802213807.zip) as an argument for `restore-sql` command.
 
-## Use-case
-I'm using this tool to backup/restore my Home Assistant, Vaultwarden and NextCloud data - so I don't need to use localstorage with my home k8s cluster.
+### Use-case
+I'm using this tool to backup/restore my Home Assistant, Vaultwarden and NextCloud data - so I don't need to use any localstorage in my home k8s cluster.
 
 The tool is working as a sidecar container for home-assistant pod and runs periodical backups (once per hour).
-
 To restore the data the Home Assistant k8s deployment has initContainer with the same tool performing restore process. 
 
-Example of home-assistant k8s deployment:
+Example of [VaultWarden deployment ](https://github.com/vadimzharov/k8s-rpi-cluster/blob/main/k8s-rpi-apps-vaultwarden/02-vaultwarden.yaml)
+
+Example of [MySQL deployment](https://github.com/vadimzharov/k8s-rpi-cluster/blob/main/k8s-rpi-apps-nextcloud/02-mysql.yaml)
+
+Example of [NextCloud deployment](https://github.com/vadimzharov/k8s-rpi-cluster/blob/main/k8s-rpi-apps-nextcloud/03-nextcloud.yaml)
+
+Example of home-assistant k8s deployment below or [here](https://github.com/vadimzharov/k8s-rpi-cluster/blob/main/k8s-rpi-apps-hass/02-hass.yaml)
+
 ```
 apiVersion: apps/v1
 kind: Deployment
