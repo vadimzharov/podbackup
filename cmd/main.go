@@ -15,6 +15,14 @@ var backuptempdir string
 
 func Main(cmdargs []string) {
 
+	if len(cmdargs) == 1 {
+
+		printHelp()
+
+		os.Exit(0)
+
+	}
+
 	currentConfig, currentCreds, isConfigValid = getConfig()
 
 	if !isConfigValid {
