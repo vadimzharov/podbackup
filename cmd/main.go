@@ -84,6 +84,38 @@ func Main(cmdargs []string) {
 				}
 			}
 
+		case "sync-to-s3":
+
+			log.Println("Working as a daemon to sync content from ", currentConfig.backupDir, " to S3 bucket ", currentConfig.bucketName, " folder ", currentConfig.bucketFolder)
+
+			syncToS3()
+
+			for {
+
+				select {
+
+				case <-backupTicker.C:
+					syncToS3()
+
+				}
+			}
+
+		case "sync-from-s3":
+
+			log.Println("Working as a daemon to sync content from S3", currentConfig.bucketName, currentConfig.bucketFolder, "to localfolder ", currentConfig.restoreDir)
+
+			syncFromS3()
+
+			for {
+
+				select {
+
+				case <-backupTicker.C:
+					syncFromS3()
+
+				}
+			}
+
 		case "prune":
 
 			pruneCosObjects()
