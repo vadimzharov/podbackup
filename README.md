@@ -2,14 +2,15 @@
 ```diff
 **This tool is manupulating with files on S3 bucket. Do not use this tool without specifying proper settings or you may loose your data!**
 ```
-## Tool to backup and restore local directories or MySQL database (via dump) to AWS S3 storage
+## Tool to backup, restore or sync local directories or MySQL database (via dump) to (or from) AWS S3 storage
 
-Simple tool to archive all files and subdirectories of desired local directory as one ZIP or TAR archive file and upload this file to S3 bucket, to desired folder.
-Tool can also make mysql dump and then archive and upload it to S3 bucket/folder.
-
-Later this files anb mysql database dump can be restored by the same tool to any other directory.
+Simple tool to archive all files and subdirectories of desired local directory as one ZIP or TAR archive file and upload this file to S3 bucket, to desired folder. 
+Tool can also make mysql dump and then archive and upload it to S3 bucket/folder. Later these files anb mysql database dump can be restored by the same tool to any other directory.
 
 The tool can also work as a daemon and run periodical backups based on desired interval. In this mode the tool also do automatic pruning and keep only number of archives in S3 bucket (deleting old files from desired folder).
+
+In addition can sync files to/from AWS S3 bucket (as daemon) - to work as a sidecar container and allow pods to sync data.
+
 
 Set the following environment variables for this tool to work:
 
@@ -25,11 +26,12 @@ Mandatory variables:
 Optionally, set the following variables:
 * S3_BUCKET_FOLDER - folder where to store ZIP archive. "podbackup" by default
 * S3_FILE_PREFIX - ZIP archive name prefix. "podbackup" by default. Full filename will be <prefix>-<timestamp>.zip
+* S3_ENDPOINT - set URL for S3 storage other than AWS (i.e. minio S3 storage). Works only for s3 sync feature! URL format is <hostname>:<port>
 * ENCRYPT_PASSWORD - encrypt/decrypt ZIP archives using this password. 
 * BACKUP_INTERVAL - interval in seconds (if number like `3000`) or in minutes/hours (like `2m` or `24h`) to run periodical backups (if running as daemon). 1h by default.
 * PRUNE_INTERVAL - interval in seconds (if number like `3000`) or in minutes/hours (like `2m` or `24h`) to run periodical pruning (if running as daemon). 2h by default.
 * COPIES_TO_KEEP - number of copies to keep in S3 folder when executing pruning.
-* FORCE_RESTORE - set to True if needed the tool to fail (exit with code 1) if it cannot restore files from backup. Useful if tool is using as IniContainer and you don't want main containers to run without restoring actual data.
+* FORCE_RESTORE - set to True if needed the tool to fail (exit with code 1) if it cannot restore files from backup. Useful if tool is using as an IniContainer and you don't want main containers to run without restoring actual data.
 * MYSQL_USER - user to connect to MySQL database when making mysql dump. Default value as root.
 * MYSQL_HOST - IP address or hosname to use to connect to MySQL database. Default value is 127.0.0.1. Process will wait for connection to restore the database.
 * MYSQL_PORT - port to use to connect to MySQL database. Default value is 3306.
@@ -61,8 +63,12 @@ where commands are:
 
 * `restore-sql` - download file from S3 and restore MySQL database. Most recent archive will be used. To restore from another file provide archive name based on 'podbackup list' output (like podbackup/podbackup-20210802213807.zip) as an argument for `restore-sql` command.
 
+* `sync-to-s3` - sync content of local folder `DIR_TO_BACKUP` into S3 storage, to `AWS_BUCKET` and `S3_BUCKET_FOLDER`. Works as daemon and runs sync process periodically according to `BACKUP_INTERVAL` environment variable. If file exists on S3 bucket the tool will skip copying it.
+
+* `sync-from-s3` - sync content from S3 storage, `AWS_BUCKET` and `S3_BUCKET_FOLDER` to local folder `DIR_TO_RESTORE`. Works as daemon and runs sync process periodically according to `BACKUP_INTERVAL` environment variable. If file exists on local filesystem the tool will skip copying it.
+
 ### Use-case
-I'm using this tool to backup/restore my Home Assistant, Vaultwarden and NextCloud data - so I don't need to use any localstorage in my home k8s cluster.
+I'm using this tool to backup/restore my Home Assistant, Vaultwarden, Trilium and NextCloud data - so I don't need to use any localstorage in my home k8s cluster.
 
 The tool is working as a sidecar container for home-assistant pod and runs periodical backups (once per hour).
 To restore the data the Home Assistant k8s deployment has initContainer with the same tool performing restore process. 

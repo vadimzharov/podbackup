@@ -21,6 +21,10 @@ const (
 	S3_BUCKET_FOLDER - folder where to store ZIP archive. "podbackup" by default
 
 	S3_FILE_PREFIX - ZIP archive name prefix. "podbackup" by default. Full filename will be <prefix>-<timestamp>.zip
+	
+	S3_ENDPOINT - set URL for S3 storage other than AWS (i.e. minio S3 storage). Works only for s3 sync feature! URL format is <hostname>:<port>
+
+	S3_SYNC_PARALLELISM - set number of parralel jobs to sync. Works only for s3 sync feature!
 
 	ENCRYPT_PASSWORD - encrypt/decrypt ZIP archives using this password. 
 
@@ -61,6 +65,10 @@ const (
 				To restore from another file provide archive name based on 'podbackup list' output (like podbackup/podbackup-20210802213807.zip)
 	
 	restore-sql		download file from S3, unpack it and use uparchived file to restore MySQL database from dump. 
+
+	sync-to-s3 - sync content of local folder DIR_TO_BACKUP into S3 storage, to AWS_BUCKET and S3_BUCKET_FOLDER. Works as daemon and runs sync process periodically according to BACKUP_INTERVAL environment variable. If file exists on S3 bucket the tool will skip copying it.
+
+    sync-from-s3 - sync content from S3 storage, AWS_BUCKET and S3_BUCKET_FOLDER to local folder DIR_TO_RESTORE. Works as daemon and runs sync process periodically according to BACKUP_INTERVAL environment variable. If file exists on local filesystem the tool will skip copying it.
 	`
 )
 

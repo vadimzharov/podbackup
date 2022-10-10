@@ -9,18 +9,20 @@ import (
 )
 
 type backupConfig struct {
-	bucketName      string
-	awsRegion       string
-	backupDir       string
-	restoreDir      string
-	bucketFolder    string
-	keyPrefix       string
-	backupLocalFile string
-	backupInverval  time.Duration
-	pruneInverval   time.Duration
-	filesKeep       int
-	forceRestore    bool
-	archiveType     string
+	s3Endpoint        string
+	bucketName        string
+	awsRegion         string
+	backupDir         string
+	restoreDir        string
+	bucketFolder      string
+	keyPrefix         string
+	backupLocalFile   string
+	backupInverval    time.Duration
+	pruneInverval     time.Duration
+	filesKeep         int
+	forceRestore      bool
+	archiveType       string
+	s3SyncParallelism int
 }
 
 type backupCreds struct {
@@ -31,15 +33,17 @@ type backupCreds struct {
 
 func setDefaultConfig() backupConfig {
 	return backupConfig{
-		awsRegion:       "us-east-1",
-		bucketFolder:    "podbackup",
-		keyPrefix:       "podbackup",
-		backupLocalFile: "backup.zip",
-		backupInverval:  3600000000000,
-		pruneInverval:   7200000000000,
-		filesKeep:       3,
-		forceRestore:    false,
-		archiveType:     "zip",
+		s3Endpoint:        "",
+		awsRegion:         "us-east-1",
+		bucketFolder:      "podbackup",
+		keyPrefix:         "podbackup",
+		backupLocalFile:   "backup.zip",
+		backupInverval:    3600000000000,
+		pruneInverval:     7200000000000,
+		filesKeep:         3,
+		forceRestore:      false,
+		archiveType:       "zip",
+		s3SyncParallelism: 3,
 	}
 }
 
@@ -97,6 +101,17 @@ func getConfig() (backupConfigParams backupConfig, backupCredentials backupCreds
 		currentConfig.awsRegion = awsregionenv
 	} else {
 		log.Println("AWS_REGION environment variable is not set, using the default", currentConfig.awsRegion)
+	}
+
+	if s3endpointenv := os.Getenv("S3_ENDPOINT"); s3endpointenv != "" {
+		currentConfig.s3Endpoint = s3endpointenv
+	} else {
+		log.Println("S3_ENDPOINT environment variable is not set, using AWS default")
+	}
+	if s3syncparenv := os.Getenv("S3_SYNC_PARALLELISM"); s3syncparenv != "" {
+		currentConfig.s3SyncParallelism, _ = strconv.Atoi(s3syncparenv)
+	} else {
+		log.Println("S3_SYNC_PARALLELISM environment variable is not set, using the default", currentConfig.s3SyncParallelism)
 	}
 
 	if backupbucketfolderenv := os.Getenv("S3_BUCKET_FOLDER"); backupbucketfolderenv != "" {
