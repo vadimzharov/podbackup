@@ -34,7 +34,7 @@ func syncToS3() {
 		panic(s3err)
 	}
 
-	s3err = s3sync.New(newSession).Sync(localfolder, s3path)
+	s3err = s3sync.New(newSession, s3sync.WithParallel(2)).Sync(localfolder, s3path)
 
 	if s3err != nil {
 		log.Println("Failed to upload files to S3 bucket!")
@@ -72,7 +72,7 @@ func syncFromS3() {
 		panic(s3err)
 	}
 
-	s3err = s3sync.New(newSession).Sync(s3path, localfolder)
+	s3err = s3sync.New(newSession, s3sync.WithParallel(2)).Sync(s3path, localfolder)
 
 	if s3err != nil {
 		log.Println("Failed to download files from S3 bucket!")
