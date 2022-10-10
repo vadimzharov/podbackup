@@ -21,6 +21,12 @@ func syncToS3() {
 		Region:      aws.String(currentConfig.awsRegion),
 	}
 
+	if currentConfig.s3Endpoint != " " {
+		s3Config.Endpoint = aws.String(currentConfig.s3Endpoint)
+		s3Config.S3ForcePathStyle = aws.Bool(true)
+		s3Config.DisableSSL = aws.Bool(true)
+	}
+
 	newSession, s3err := session.NewSession(s3Config)
 	if s3err != nil {
 		log.Println("Failed to connect to S3 bucket using provided credentials")
@@ -51,6 +57,12 @@ func syncFromS3() {
 	s3Config := &aws.Config{
 		Credentials: credentials.NewStaticCredentials(currentCreds.awsKey, currentCreds.awsSecretKey, ""),
 		Region:      aws.String(currentConfig.awsRegion),
+	}
+
+	if currentConfig.s3Endpoint != " " {
+		s3Config.Endpoint = aws.String(currentConfig.s3Endpoint)
+		s3Config.S3ForcePathStyle = aws.Bool(true)
+		s3Config.DisableSSL = aws.Bool(true)
 	}
 
 	newSession, s3err := session.NewSession(s3Config)
