@@ -26,6 +26,7 @@ Mandatory variables:
 Optionally, set the following variables:
 * S3_BUCKET_FOLDER - folder where to store ZIP archive. "podbackup" by default
 * S3_FILE_PREFIX - ZIP archive name prefix. "podbackup" by default. Full filename will be <prefix>-<timestamp>.zip
+* S3_ENDPOINT - set URL for S3 storage other than AWS (i.e. minio S3 storage). Works only for s3 sync feature! URL format is <hostname>:<port>
 * ENCRYPT_PASSWORD - encrypt/decrypt ZIP archives using this password. 
 * BACKUP_INTERVAL - interval in seconds (if number like `3000`) or in minutes/hours (like `2m` or `24h`) to run periodical backups (if running as daemon). 1h by default.
 * PRUNE_INTERVAL - interval in seconds (if number like `3000`) or in minutes/hours (like `2m` or `24h`) to run periodical pruning (if running as daemon). 2h by default.
@@ -62,9 +63,9 @@ where commands are:
 
 * `restore-sql` - download file from S3 and restore MySQL database. Most recent archive will be used. To restore from another file provide archive name based on 'podbackup list' output (like podbackup/podbackup-20210802213807.zip) as an argument for `restore-sql` command.
 
-* `sync-to-s3` - sync content of local folder `DIR_TO_BACKUP` into AWS S3 storage, to `AWS_BUCKET` and `S3_BUCKET_FOLDER`. Works as daemon and runs sync process periodically according to `BACKUP_INTERVAL` environment variable. If file exists on S3 bucket the tool will skip copying it.
+* `sync-to-s3` - sync content of local folder `DIR_TO_BACKUP` into S3 storage, to `AWS_BUCKET` and `S3_BUCKET_FOLDER`. Works as daemon and runs sync process periodically according to `BACKUP_INTERVAL` environment variable. If file exists on S3 bucket the tool will skip copying it.
 
-* `sync-from-s3` - sync content from AWS S3 storage, `AWS_BUCKET` and `S3_BUCKET_FOLDER` to local folder `DIR_TO_RESTORE`. Works as daemon and runs sync process periodically according to `BACKUP_INTERVAL` environment variable. If file exists on local filesystem the tool will skip copying it.
+* `sync-from-s3` - sync content from S3 storage, `AWS_BUCKET` and `S3_BUCKET_FOLDER` to local folder `DIR_TO_RESTORE`. Works as daemon and runs sync process periodically according to `BACKUP_INTERVAL` environment variable. If file exists on local filesystem the tool will skip copying it.
 
 ### Use-case
 I'm using this tool to backup/restore my Home Assistant, Vaultwarden, Trilium and NextCloud data - so I don't need to use any localstorage in my home k8s cluster.
