@@ -9,6 +9,7 @@ import (
 )
 
 type backupConfig struct {
+	s3Endpoint      string
 	bucketName      string
 	awsRegion       string
 	backupDir       string
@@ -31,6 +32,7 @@ type backupCreds struct {
 
 func setDefaultConfig() backupConfig {
 	return backupConfig{
+		s3Endpoint:      "",
 		awsRegion:       "us-east-1",
 		bucketFolder:    "podbackup",
 		keyPrefix:       "podbackup",
@@ -97,6 +99,12 @@ func getConfig() (backupConfigParams backupConfig, backupCredentials backupCreds
 		currentConfig.awsRegion = awsregionenv
 	} else {
 		log.Println("AWS_REGION environment variable is not set, using the default", currentConfig.awsRegion)
+	}
+
+	if s3endpointenv := os.Getenv("S3_ENDPOINT"); s3endpointenv != "" {
+		currentConfig.s3Endpoint = s3endpointenv
+	} else {
+		log.Println("S3_ENDPOINT environment variable is not set, using AWS default")
 	}
 
 	if backupbucketfolderenv := os.Getenv("S3_BUCKET_FOLDER"); backupbucketfolderenv != "" {
