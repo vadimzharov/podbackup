@@ -20,7 +20,7 @@ func restoreFiles(cmdargs []string) {
 	if len(cmdargs) > 2 {
 		backupkeyname = cmdargs[2]
 	} else {
-		filesList := listBackups(currentConfig.bucketFolder, currentConfig.keyPrefix, currentConfig.bucketName, currentCreds.awsKey, currentCreds.awsSecretKey, currentConfig.awsRegion)
+		filesList := listBackups(currentConfig.bucketFolder, currentConfig.keyPrefix, currentConfig.bucketName)
 
 		if filesList == nil {
 			log.Println("Cannot list files in bucket", currentConfig.bucketName)
@@ -37,7 +37,7 @@ func restoreFiles(cmdargs []string) {
 
 	currentConfig.backupLocalFile = backuptempdir + filepath.Base(backupkeyname)
 
-	downloadedFile := downloadBackup(currentConfig.backupLocalFile, backupkeyname, currentConfig.bucketName, currentCreds.awsKey, currentCreds.awsSecretKey, currentConfig.awsRegion)
+	downloadedFile := downloadBackup(currentConfig.backupLocalFile, backupkeyname, currentConfig.bucketName)
 
 	if downloadedFile == nil {
 		log.Println("File could not be downloaded from S3 storage. Nothing to restore.")
