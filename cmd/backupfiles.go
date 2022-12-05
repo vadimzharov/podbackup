@@ -55,7 +55,7 @@ func backupFiles() {
 
 	}
 
-	uploadBackup(currentConfig.backupLocalFile, backupkeyname, currentConfig.bucketName, currentCreds.awsKey, currentCreds.awsSecretKey, currentConfig.awsRegion)
+	uploadBackup(currentConfig.backupLocalFile, backupkeyname, currentConfig.bucketName)
 
 	os.Remove(currentConfig.backupLocalFile)
 }

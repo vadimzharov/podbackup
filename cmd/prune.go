@@ -4,13 +4,11 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"log"
 )
 
-func prune(filesList []string, filesKeep int, bucketname string, awskey string, awssecretkey string, awsregion string) {
+func prune(filesList []string, filesKeep int, bucketname string) {
 
 	log.Println("Starting to prune objects...")
 
@@ -21,19 +19,7 @@ func prune(filesList []string, filesKeep int, bucketname string, awskey string, 
 
 	pruneList := filesList[filesKeep:]
 
-	s3Config := &aws.Config{
-		Credentials: credentials.NewStaticCredentials(awskey, awssecretkey, ""),
-		Region:      aws.String(awsregion),
-	}
-
 	bucket := aws.String(bucketname)
-
-	newSession, s3err := session.NewSession(s3Config)
-	if s3err != nil {
-		log.Println("Failed to connect to S3 bucket using provided credentials")
-		log.Println(s3err)
-		return
-	}
 
 	pruneObjectsList := make([]*s3.ObjectIdentifier, 0, 1000)
 
@@ -44,7 +30,7 @@ func prune(filesList []string, filesKeep int, bucketname string, awskey string, 
 		pruneObjectsList = append(pruneObjectsList, &obj)
 	}
 
-	s3objects := s3.New(newSession)
+	s3objects := s3.New(s3conn())
 
 	input := &s3.DeleteObjectsInput{
 		Bucket: bucket,

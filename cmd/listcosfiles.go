@@ -7,7 +7,7 @@ import (
 
 func listCosFiles() {
 
-	filesList := listBackups(currentConfig.bucketFolder, currentConfig.keyPrefix, currentConfig.bucketName, currentCreds.awsKey, currentCreds.awsSecretKey, currentConfig.awsRegion)
+	filesList := listBackups(currentConfig.bucketFolder, currentConfig.keyPrefix, currentConfig.bucketName)
 
 	if filesList == nil {
 		log.Println("Cannot list files in bucket", currentConfig.bucketName)
