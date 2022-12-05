@@ -3,32 +3,18 @@ package cmd
 import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"log"
 	"sort"
 )
 
-func listBackups(backupkeypath string, backupkeyprefix string, bucketname string, awskey string, awssecretkey string, awsregion string) []string {
+func listBackups(backupkeypath string, backupkeyprefix string, bucketname string) []string {
 
 	log.Println("Listing files from bucket", bucketname, "directory", backupkeypath)
 
-	s3Config := &aws.Config{
-		Credentials: credentials.NewStaticCredentials(awskey, awssecretkey, ""),
-		Region:      aws.String(awsregion),
-	}
-
 	bucket := aws.String(bucketname)
 
-	newSession, s3err := session.NewSession(s3Config)
-	if s3err != nil {
-		log.Println("Failed to connect to S3 bucket using provided credentials")
-		log.Println(s3err)
-		return nil
-	}
-
-	s3Client := s3.New(newSession)
+	s3Client := s3.New(s3conn())
 
 	s3FilelistFilter := backupkeypath + backupkeyprefix
 
