@@ -116,6 +116,14 @@ func Main(cmdargs []string) {
 				}
 			}
 
+		case "copy-to-s3":
+
+			syncToS3()
+
+		case "copy-from-s3":
+
+			syncFromS3()
+
 		case "prune":
 
 			pruneCosObjects()

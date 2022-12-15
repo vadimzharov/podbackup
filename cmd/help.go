@@ -66,6 +66,10 @@ const (
 	
 	restore-sql		download file from S3, unpack it and use uparchived file to restore MySQL database from dump. 
 
+	copy-to-s3 - copy content of local folder DIR_TO_BACKUP into S3 storage, to AWS_BUCKET and S3_BUCKET_FOLDER.
+
+	copy-from-s3 - copy content from S3 storage, AWS_BUCKET and S3_BUCKET_FOLDER to local folder DIR_TO_RESTORE. 
+	
 	sync-to-s3 - sync content of local folder DIR_TO_BACKUP into S3 storage, to AWS_BUCKET and S3_BUCKET_FOLDER. Works as daemon and runs sync process periodically according to BACKUP_INTERVAL environment variable. If file exists on S3 bucket the tool will skip copying it.
 
     sync-from-s3 - sync content from S3 storage, AWS_BUCKET and S3_BUCKET_FOLDER to local folder DIR_TO_RESTORE. Works as daemon and runs sync process periodically according to BACKUP_INTERVAL environment variable. If file exists on local filesystem the tool will skip copying it.
