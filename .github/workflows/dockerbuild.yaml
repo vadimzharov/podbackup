@@ -5,13 +5,13 @@ on:
   push:
     branches:
       - 'main'
-      - 'test'
+#      - 'test'
 #    tags:
 #      - 'v*.*.*'
   pull_request:
     branches:
       - 'main'
-      - 'test'
+#      - 'test'
 
 jobs:
   build:
@@ -39,4 +39,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
           push: true
-          tags: quay.io/vadimzharov/podbackup:test
+          tags: quay.io/vadimzharov/podbackup:latest
