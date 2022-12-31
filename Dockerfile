@@ -1,5 +1,7 @@
 FROM golang:1.19-alpine AS build_deps
 
+ARG TARGETARCH
+
 RUN apk add --no-cache git
 
 WORKDIR /usr/src
@@ -12,7 +14,7 @@ RUN go mod download
 
 FROM build_deps AS build
 
-ARG IMAGE_ARCH=arm
+#ARG IMAGE_ARCH=arm
 
 ARG ARM_VERSION=7
 
