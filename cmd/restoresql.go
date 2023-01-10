@@ -70,17 +70,26 @@ func restoreSqlDb(cmdargs []string) {
 		mysqlrestorecmd.Stdout = &out
 		mysqlrestorecmd.Stderr = &stderr
 
-		mysqlrestorecmderr := mysqlrestorecmd.Run()
+		err := mysqlrestorecmd.Run()
 
-		if mysqlrestorecmderr != nil {
+		if err != nil {
 
-			log.Println(fmt.Sprint(mysqlrestorecmderr) + ": " + stderr.String())
+			log.Fatal(fmt.Sprint(err) + ": " + stderr.String())
+			if currentConfig.forceRestore {
+				log.Fatal("MYSQL restore process failed. FORCE_RESTORE set to TRUE, but cannot restore MySQL database from archive, exiting with error...")
+				os.Exit(1)
+			}
+
+			log.Println("MYSQL dump file was not found in latest archive dowloaded from S3 bucket. Skipping MYSQL restore, exiting...")
+			return
+
+		} else {
+
+			log.Println("All databases were restored from the dump file, cleaning FS...")
 
 		}
 
-		log.Println("All databases were restored from the dump file")
-
-		err := os.RemoveAll(currentSqlConfig.sqlDumpDir)
+		err = os.RemoveAll(currentSqlConfig.sqlDumpDir)
 		if err != nil {
 			log.Fatal(err)
 		}
