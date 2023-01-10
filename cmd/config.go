@@ -23,6 +23,7 @@ type backupConfig struct {
 	forceRestore      bool
 	archiveType       string
 	s3SyncParallelism int
+	s3CopyBeforeSync  bool
 }
 
 type backupCreds struct {
@@ -44,6 +45,7 @@ func setDefaultConfig() backupConfig {
 		forceRestore:      false,
 		archiveType:       "zip",
 		s3SyncParallelism: 3,
+		s3CopyBeforeSync:  false,
 	}
 }
 
@@ -151,6 +153,12 @@ func getConfig() (backupConfigParams backupConfig, backupCredentials backupCreds
 		currentConfig.forceRestore, _ = strconv.ParseBool(forcerestoreenv)
 	} else {
 		log.Println("FORCE_RESTORE environment variable is not set, using the default", currentConfig.forceRestore)
+	}
+
+	if s3CopyBeforeSyncenv := os.Getenv("S3_COPY_BEFORE_SYNC"); s3CopyBeforeSyncenv != "" {
+		currentConfig.s3CopyBeforeSync, _ = strconv.ParseBool(s3CopyBeforeSyncenv)
+	} else {
+		log.Println("S3_COPY_BEFORE_SYNC environment variable is not set, using the default", currentConfig.s3CopyBeforeSync)
 	}
 
 	if archivetypeenv := os.Getenv("ARCHIVE_TYPE"); archivetypeenv != "" {
