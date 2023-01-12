@@ -28,6 +28,7 @@ Optionally, set the following variables:
 * S3_FILE_PREFIX - ZIP archive name prefix. "podbackup" by default. Full filename will be <prefix>-<timestamp>.zip
 * S3_ENDPOINT - set URL for S3 storage other than AWS (i.e. minio S3 storage). Works only for s3 sync feature! URL format is <hostname>:<port>
 * S3_SYNC_PARALLELISM - set number of parralel jobs to sync. Works only for s3 sync feature!
+* S3_COPY_BEFORE_SYNC - copy all files from S3 folder before start sync-to-s3 process (useful if required to pull all files from S3 after pod creation). False by default.
 * ENCRYPT_PASSWORD - encrypt/decrypt ZIP archives using this password. 
 * BACKUP_INTERVAL - interval in seconds (if number like `3000`) or in minutes/hours (like `2m` or `24h`) to run periodical backups (if running as daemon). 1h by default.
 * PRUNE_INTERVAL - interval in seconds (if number like `3000`) or in minutes/hours (like `2m` or `24h`) to run periodical pruning (if running as daemon). 2h by default.
