@@ -88,7 +88,12 @@ func Main(cmdargs []string) {
 
 			log.Println("Working as a daemon to sync content from ", currentConfig.backupDir, " to S3 bucket ", currentConfig.bucketName, " folder ", currentConfig.bucketFolder)
 
-			syncToS3()
+			if currentConfig.s3CopyBeforeSync {
+				log.Println("S3_COPY_BEFORE_SYNC set to true, copying data from S3 before starting S3 sync process")
+				syncFromS3()
+			} else {
+				syncToS3()
+			}
 
 			for {
 

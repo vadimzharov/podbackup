@@ -26,6 +26,8 @@ const (
 
 	S3_SYNC_PARALLELISM - set number of parralel jobs to sync. Works only for s3 sync feature!
 
+	S3_COPY_BEFORE_SYNC - copy all files from S3 folder before start sync-to-s3 process (useful if required to pull all files from S3 after pod creation). False by default.
+
 	ENCRYPT_PASSWORD - encrypt/decrypt ZIP archives using this password. 
 
 	BACKUP_INTERVAL - interval in seconds to run periodical backup (if running as daemon). 3600 seconds by default.
