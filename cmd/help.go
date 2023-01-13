@@ -28,6 +28,8 @@ const (
 
 	S3_COPY_BEFORE_SYNC - copy all files from S3 folder before start sync-to-s3 process (useful if required to pull all files from S3 after pod creation). False by default.
 
+	S3_COPY_WITH_DELETE - when copying to/from S3 make destination looks like source (delete files in destination if they don't exist in source)
+
 	ENCRYPT_PASSWORD - encrypt/decrypt ZIP archives using this password. 
 
 	BACKUP_INTERVAL - interval in seconds to run periodical backup (if running as daemon). 3600 seconds by default.
