@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+
 	//	"strings"
 	"time"
 )
@@ -24,6 +25,7 @@ type backupConfig struct {
 	archiveType       string
 	s3SyncParallelism int
 	s3CopyBeforeSync  bool
+	s3CopyWithDelete  bool
 }
 
 type backupCreds struct {
@@ -46,6 +48,7 @@ func setDefaultConfig() backupConfig {
 		archiveType:       "zip",
 		s3SyncParallelism: 3,
 		s3CopyBeforeSync:  false,
+		s3CopyWithDelete:  false,
 	}
 }
 
@@ -159,6 +162,12 @@ func getConfig() (backupConfigParams backupConfig, backupCredentials backupCreds
 		currentConfig.s3CopyBeforeSync, _ = strconv.ParseBool(s3CopyBeforeSyncenv)
 	} else {
 		log.Println("S3_COPY_BEFORE_SYNC environment variable is not set, using the default", currentConfig.s3CopyBeforeSync)
+	}
+
+	if s3CopyWithDeleteenv := os.Getenv("S3_COPY_WITH_DELETE"); s3CopyWithDeleteenv != "" {
+		currentConfig.s3CopyWithDelete, _ = strconv.ParseBool(s3CopyWithDeleteenv)
+	} else {
+		log.Println("S3_COPY_WITH_DELETE environment variable is not set, using the default", currentConfig.s3CopyWithDelete)
 	}
 
 	if archivetypeenv := os.Getenv("ARCHIVE_TYPE"); archivetypeenv != "" {
