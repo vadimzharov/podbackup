@@ -1,17 +1,10 @@
-name: Build docker image
+name: Build docker image - release
 
-# Triggers when push to main branch
+# Triggers when tag is created
 on:
   push:
-#    branches:
-#      - 'main'
-#      - 'test'
     tags:
       - 'v*'
-#  pull_request:
-#    branches:
-#      - 'main'
-#      - 'test'
 
 jobs:
   build:
