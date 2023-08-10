@@ -3,20 +3,23 @@ name: Build docker image
 # Triggers when push to main branch
 on:
   push:
-    branches:
-      - 'main'
+#    branches:
+#      - 'main'
 #      - 'test'
-#    tags:
-#      - 'v*.*.*'
-  pull_request:
-    branches:
-      - 'main'
+    tags:
+      - 'v*'
+#  pull_request:
+#    branches:
+#      - 'main'
 #      - 'test'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Set VERSION env
+      # GITHUB_REF value: refs/heads/v*
+        run: echo "VERSION=$(echo ${GITHUB_REF:11})" >> $GITHUB_ENV
       # Get the repository's code
       - name: Checkout
         uses: actions/checkout@v2
@@ -39,4 +42,6 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
           push: true
-          tags: quay.io/vadimzharov/podbackup:latest
+          tags: |
+            quay.io/vadimzharov/podbackup:${{ env.VERSION }}
+            quay.io/vadimzharov/podbackup:latest
