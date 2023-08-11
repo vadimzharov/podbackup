@@ -1,0 +1,90 @@
+version: '3'
+
+vars:
+  MINIO_CONTAINER_NAME: "minio-podbackup"
+  MINIO_CONTAINER_IMAGE: "quay.io/minio/minio"
+  MINIO_ACCESS_KEY: "123"
+  MINIO_SECRET_KEY: "12345678"
+  MINIO_BUCKET_NAME: "test"
+  MYSQL_CONTAINER_IMAGE: "docker.io/library/mariadb:10.10"
+  MYSQL_CONTAINER_NAME: "mysql-podbackup"
+  MYSQL_USER: "test-user"
+  MYSQL_PASSWORD: "test-user"
+  MYSQL_DATABASE: "testdb"
+
+dotenv: ['test/.env']
+
+tasks:
+  build:
+    cmds:
+      - go build -o test/podbackup -v
+
+  generate-test-data:
+    cmds:
+      - mkdir -p test/backup-data
+      - rm -rf test/restore-data
+      - mkdir -p test/restore-data
+      - for ((i=1; i<=5; i++)); do echo $RANDOM | md5sum | head -c 20 > test/backup-data/backupfile-$i; done;
+
+  create-minio:
+    cmds:
+      - podman stop -i {{.MINIO_CONTAINER_NAME}}
+      - sleep 1
+      - podman run -d --rm -p 9000:9000 -p 9001:9001 --name {{.MINIO_CONTAINER_NAME}} -e MINIO_ACCESS_KEY={{.MINIO_ACCESS_KEY}} -e MINIO_SECRET_KEY={{.MINIO_SECRET_KEY}} {{.MINIO_CONTAINER_IMAGE}} server /data --console-address ":9001"
+      - podman exec {{.MINIO_CONTAINER_NAME}} mc config host add localminio http://localhost:9000 {{.MINIO_ACCESS_KEY}} {{.MINIO_SECRET_KEY}}
+      - podman exec {{.MINIO_CONTAINER_NAME}} mc mb localminio/{{.MINIO_BUCKET_NAME}}
+
+  test-backup-data:
+    deps: [build,generate-test-data]
+    cmds:
+      - task: create-minio
+      - test/podbackup backup
+      - test/podbackup restore
+      - test/podbackup list
+      - if [[ $(diff -r test/backup-data/ test/restore-data) ]]; then echo "TEST FAILED - RESTORE != BACKUP"; else echo "TEST SUCCESSFUL"; fi
+      - podman stop -i {{.MINIO_CONTAINER_NAME}}      
+    env:
+      AWS_BUCKET: "{{.MINIO_BUCKET_NAME}}"
+      DIR_TO_BACKUP: "test/backup-data/"
+      DIR_TO_RESTORE: "test/restore-data/"
+      S3_BUCKET_FOLDER: "test-data"
+      AWS_KEY: "{{.MINIO_ACCESS_KEY}}"
+      AWS_SECRET_KEY: "{{.MINIO_SECRET_KEY}}"
+      S3_ENDPOINT: localhost:9000
+
+  create-mysql:
+    cmds:
+      - podman stop -i {{.MYSQL_CONTAINER_NAME}}
+      - sleep 1
+      - podman run -d --rm -p 3306:3306 --name {{.MYSQL_CONTAINER_NAME}} -e MARIADB_USER={{.MYSQL_USER}} -e MARIADB_PASSWORD={{.MYSQL_PASSWORD}} -e MARIADB_ROOT_PASSWORD={{.MYSQL_PASSWORD}} -e MARIADB_DATABASE={{.MYSQL_DATABASE}} {{.MYSQL_CONTAINER_IMAGE}}
+      - sleep 10
+  
+  generate-mysql-data:
+    cmds:
+      - podman exec {{.MYSQL_CONTAINER_NAME}} mysql -h 127.0.0.1 -P 3306 -u root --password={{.MYSQL_PASSWORD}} -e "CREATE DATABASE IF NOT EXISTS {{.MYSQL_DATABASE}};"
+      - podman exec {{.MYSQL_CONTAINER_NAME}} mysql -h 127.0.0.1 -P 3306 -u root --password={{.MYSQL_PASSWORD}} -e "use {{.MYSQL_DATABASE}}; CREATE TABLE IF NOT EXISTS testdata (id INT AUTO_INCREMENT PRIMARY KEY, testtext TEXT);"
+      - podman exec {{.MYSQL_CONTAINER_NAME}} mysql -h 127.0.0.1 -P 3306 -u root --password={{.MYSQL_PASSWORD}} -e "use {{.MYSQL_DATABASE}}; INSERT INTO testdata (testtext) VALUES('testtext1');"
+      - podman exec {{.MYSQL_CONTAINER_NAME}} mysql -h 127.0.0.1 -P 3306 -u root --password={{.MYSQL_PASSWORD}} -e "use {{.MYSQL_DATABASE}}; INSERT INTO testdata (testtext) VALUES('testtext2');"
+
+  test-backup-mysql:
+    deps: [build,create-minio] 
+    cmds:
+      - task: create-mysql
+      - task: generate-mysql-data
+      - test/podbackup backup-sql
+      - podman stop -i {{.MYSQL_CONTAINER_IMAGE}}
+      - task: create-mysql
+      - test/podbackup restore-sql
+      - podman exec {{.MYSQL_CONTAINER_NAME}} mysql -h 127.0.0.1 -P 3306 -u root --password={{.MYSQL_PASSWORD}} -e "use {{.MYSQL_DATABASE}}; SELECT * FROM testdata;"
+      - podman stop -i {{.MYSQL_CONTAINER_IMAGE}}
+    env:
+      AWS_BUCKET: "{{.MINIO_BUCKET_NAME}}"
+      DIR_TO_BACKUP: "test/backup-data/"
+      DIR_TO_RESTORE: "test/restore-data/"
+      S3_BUCKET_FOLDER: "test-data"
+      AWS_KEY: "{{.MINIO_ACCESS_KEY}}"
+      AWS_SECRET_KEY: "{{.MINIO_SECRET_KEY}}"
+      S3_ENDPOINT: localhost:9000
+      MYSQL_USER: root
+      MYSQL_PASSWORD: "{{.MYSQL_PASSWORD}}"
+      MYSQL_HOST: "127.0.0.1"
