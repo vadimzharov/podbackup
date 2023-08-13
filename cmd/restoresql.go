@@ -14,7 +14,7 @@ func restoreSqlDb(cmdargs []string) {
 
 	mysqlConnSleepInternval := 20
 
-	currentSqlConfig, isSqlConfigValid := getSqlConfig()
+	currentSqlConfig, isSqlConfigValid := getSqlConfig("mysql")
 
 	if !isSqlConfigValid {
 		log.Fatal("Mandatory variables to make SQL backup are not defined. Cannot make backup, exiting with error....")

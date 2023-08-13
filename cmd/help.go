@@ -15,7 +15,8 @@ const (
 	AWS_SECRET_KEY - secret key to use to access to the bucket
 	DIR_TO_BACKUP - absolute path for directory to backup (tool will backup all files and subdirectories inside it) - if tool is using to backup the data.
 	DIR_TO_RESTORE - absolute path for directory to restore into - if tool is using to restore the data.
-	MYSQL_PASSWORD - Password to connect to MySQL database to make mysql dump.
+	MYSQL_PASSWORD - Password to connect to MySQL database to make mysql dump (if use with command backup-sql/restore-sql).
+	PGSQL_PASSWORD - Password to connect to PostgreSQL database to make pgsql dump (if use with command backup-pgsql/restore-pgsql).
 
 	Optionally set the following variables:
 	S3_BUCKET_FOLDER - folder where to store ZIP archive. "podbackup" by default
@@ -32,7 +33,7 @@ const (
 
 	ENCRYPT_PASSWORD - encrypt/decrypt ZIP archives using this password. 
 
-	BACKUP_INTERVAL - interval in seconds to run periodical backup (if running as daemon). 3600 seconds by default.
+	BACKUP_INTERVAL - interval to run periodical backup (if running as daemon). Format is Xs/m/h. Default value is 1h
 
 	COPIES_TO_KEEP - number of copies to keep in S3 folder when executing pruning.
 
@@ -43,6 +44,12 @@ const (
 	MYSQL_HOST - IP address or hosname to use to connect to MySQL database. Default value is 127.0.0.1. Process will wait for connection to restore the database.
 
 	MYSQL_PORT - port to use to connect to MySQL database. Default value is 3306.
+
+	PGSQL_USER - user to connect to PostgreSQL database when making pgsql dump. Default value as root.
+
+	PGSQL_HOST - IP address or hosname to use to connect to PostgreSQL database. Default value is 127.0.0.1. Process will wait for connection to restore the database.
+
+	PGSQL_PORT - port to use to connect to PostgreSQL database. Default value is 5432.	
 	
 	ARCHIVE_TYPE - 	by default set to 'zip' - tool will create ZIP archive (and encrypt it if ENCRYPT_PASSWORD is set). 
 	            	Set to 'tarzip' - to archive all files as tar archive and then zip it (encrypted if ENCRYPT_PASSWORD is set).
@@ -55,11 +62,16 @@ const (
 
 	backup-sql		run one-time MySQL backup
 
+	backup-pgsql	run one-time PostgreSQL backup
+
 	backup-daemon		work as daemon and run periodical backups according to BACKUP_INTERVAL environment variable (3600 seconds by default).
 				In this mode daemon will do automatic pruning and keep only # of copies based on COPIES_TO_KEEP environment variable (3 by default)
 
 	backup-sql-daemon	work as daemon and run periodical MySQL dump according to BACKUP_INTERVAL environment variable (3600 seconds by default).
 	In this mode daemon will do automatic pruning and keep only # of copies based on COPIES_TO_KEEP environment variable (3 by default)
+
+	backup-pgsql-daemon	work as daemon and run periodical PostgreSQL dump according to BACKUP_INTERVAL environment variable (3600 seconds by default).
+	In this mode daemon will do automatic pruning and keep only # of copies based on COPIES_TO_KEEP environment variable (3 by default)	
 
 	prune			manually run pruning (delete all old archives)
 
@@ -69,6 +81,8 @@ const (
 				To restore from another file provide archive name based on 'podbackup list' output (like podbackup/podbackup-20210802213807.zip)
 	
 	restore-sql		download file from S3, unpack it and use uparchived file to restore MySQL database from dump. 
+
+	restore-pgsql	download file from S3, unpack it and use uparchived file to restore PostgreSQL database from dump. 
 
 	copy-to-s3 - copy content of local folder DIR_TO_BACKUP into S3 storage, to AWS_BUCKET and S3_BUCKET_FOLDER.
 

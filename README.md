@@ -21,7 +21,8 @@ Mandatory variables:
 * AWS_SECRET_KEY - secret key to use to access to the bucket
 * DIR_TO_BACKUP - absolute path for directory to backup (tool will backup all files and subdirectories inside it)
 * DIR_TO_RESTORE - absolute path for directory to restore into
-* MYSQL_PASSWORD - Password to connect to MySQL database to make mysql dump (if executing tool to make MySQL dump).
+* MYSQL_PASSWORD - password to connect to MySQL database to make mysql dump (if executing tool to make MySQL dump).
+* PGSQL_PASSWORD - password to connect to PostgreSQL database to make pgsql dump (if use with command backup-pgsql/restore-pgsql).
 
 Optionally, set the following variables:
 * S3_BUCKET_FOLDER - folder where to store ZIP archive. "podbackup" by default
@@ -38,6 +39,9 @@ Optionally, set the following variables:
 * MYSQL_USER - user to connect to MySQL database when making mysql dump. Default value as root.
 * MYSQL_HOST - IP address or hosname to use to connect to MySQL database. Default value is 127.0.0.1. Process will wait for connection to restore the database.
 * MYSQL_PORT - port to use to connect to MySQL database. Default value is 3306.
+* PGSQL_USER - user to connect to PostgreSQL database when making pgsql dump. Default value as root.
+*	PGSQL_HOST - IP address or hosname to use to connect to PostgreSQL database. Default value is 127.0.0.1. Process will wait for connection to restore the database.
+* PGSQL_PORT - port to use to connect to PostgreSQL database. Default value is 5432.
 *	ARCHIVE_TYPE - 	by default set to `zip` - tool will create ZIP archive (and encrypt it if ENCRYPT_PASSWORD is set). 
 	              	Set to `tarzip` - to archive all files as tar archive and then zip it (encrypted if ENCRYPT_PASSWORD is set).
 			            Use it if you need to save original ownership and mode of the files.
@@ -54,9 +58,13 @@ where commands are:
 
 * `backup-sql` - run one time backup to make MySQL dump based on `MYSQL*` variables.
 
+* `backup-pgsql` - run one time backup to make PostgreSQL dump based on `PGSQL*` variables.
+
 * `backup-daemon` - work as daemon and run periodical backups according to BACKUP_INTERVAL environment variable (`1h` by default). In this mode daemon will do automatic pruning (default PRUNE_INTERVAL is `2h`) and keep only # of copies based on COPIES_TO_KEEP environment variable (3 by default). **All other files with prefix `S3_FILE_PREFIX` in the folder `S3_BUCKET_FOLDER` will be destroyed.**
 
 * `backup-sql-daemon` - work as daemon and run periodical MySQL database dumps according to BACKUP_INTERVAL environment variable (`1h` by default). In this mode daemon will do automatic pruning (default PRUNE_INTERVAL is `2h`) and keep only # of copies based on COPIES_TO_KEEP environment variable (3 by default). **All other files with prefix `S3_FILE_PREFIX` in the folder `S3_BUCKET_FOLDER` will be destroyed.**
+
+* `backup-pgsql-daemon` - work as daemon and run periodical PostgreSQL database dumps according to BACKUP_INTERVAL environment variable (`1h` by default). In this mode daemon will do automatic pruning (default PRUNE_INTERVAL is `2h`) and keep only # of copies based on COPIES_TO_KEEP environment variable (3 by default). **All other files with prefix `S3_FILE_PREFIX` in the folder `S3_BUCKET_FOLDER` will be destroyed.**
 
 * `prune` - manually run pruning (delete all old archives). **All other files with prefix `S3_FILE_PREFIX` in the folder `S3_BUCKET_FOLDER` will be destroyed.**
 
