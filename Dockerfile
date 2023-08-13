@@ -28,7 +28,7 @@ RUN CGO_ENABLED=0 go build -o podbackup -ldflags '-w -extldflags "-static"' .
 
 FROM alpine:3.18.3
 
-RUN apk add --no-cache ca-certificates mariadb-client postgresql
+RUN apk add --no-cache ca-certificates mariadb-client postgresql14-client
 
 COPY --from=build /usr/src/podbackup /usr/local/bin/podbackup
 
