@@ -76,6 +76,7 @@ func getSqlConfig(sqltype string) (sqlBackupParams sqlBackupConfig, configvalid 
 
 		currentSqlConfig.sqlClientCmdPath = "/usr/bin/psql"
 		currentSqlConfig.sqlDumpCmdPath = "/usr/bin/pg_dump"
+		currentSqlConfig.sqlRestoreMarkDir = "/tmp/pgsqlrestore/"
 
 		if sqlUserenv := os.Getenv("PGSQL_USER"); sqlUserenv != "" {
 			currentSqlConfig.sqlUser = sqlUserenv
