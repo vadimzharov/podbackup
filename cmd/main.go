@@ -68,7 +68,7 @@ func Main(cmdargs []string) {
 
 		case "backup-sql-daemon":
 
-			log.Println("Working as a daemon to make SQL database backup, backup interval is:", currentConfig.backupInverval, ", and pruning interval is:", currentConfig.pruneInverval)
+			log.Println("Working as a daemon to make MySQL database backup, backup interval is:", currentConfig.backupInverval, ", and pruning interval is:", currentConfig.pruneInverval)
 
 			for {
 				select {
@@ -76,6 +76,24 @@ func Main(cmdargs []string) {
 				case <-backupTicker.C:
 
 					backupSqlDb()
+
+				case <-pruneTicker.C:
+
+					pruneCosObjects()
+
+				}
+			}
+
+		case "backup-pgsql-daemon":
+
+			log.Println("Working as a daemon to make PostgreSQL database backup, backup interval is:", currentConfig.backupInverval, ", and pruning interval is:", currentConfig.pruneInverval)
+
+			for {
+				select {
+
+				case <-backupTicker.C:
+
+					backupPGSqlDb()
 
 				case <-pruneTicker.C:
 
@@ -152,6 +170,14 @@ func Main(cmdargs []string) {
 		case "restore-sql":
 
 			restoreSqlDb(cmdargs)
+
+		case "backup-pgsql":
+
+			backupPGSqlDb()
+
+		case "restore-pgsql":
+
+			restorePGSqlDb(cmdargs)
 
 		default:
 

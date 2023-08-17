@@ -10,7 +10,7 @@ import (
 
 func backupSqlDb() {
 
-	currentSqlConfig, isSqlConfigValid := getSqlConfig()
+	currentSqlConfig, isSqlConfigValid := getSqlConfig("mysql")
 
 	var mysqldumpargs []string
 

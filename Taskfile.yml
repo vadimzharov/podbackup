@@ -1,6 +1,13 @@
 version: '3'
 
+# TO RUN ANY *-container TASKS YOU MUST PROVIDE HOST IP (for containers to communicate with each other). 
+# EXAMPLE:
+# task test-backup-pgsql-container -- 192.168.1.1
+# To test locally, re-use env file with this command:
+# env $(cat test/.env | xargs) test/podbackup <command>
+
 vars:
+  PODBACKUP_CONTAINER_IMAGE: "localhost/podbackup:taskfile"
   MINIO_CONTAINER_NAME: "minio-podbackup"
   MINIO_CONTAINER_IMAGE: "quay.io/minio/minio"
   MINIO_ACCESS_KEY: "123"
@@ -8,9 +15,8 @@ vars:
   MINIO_BUCKET_NAME: "test"
   MYSQL_CONTAINER_IMAGE: "docker.io/library/mariadb:10.10"
   MYSQL_CONTAINER_NAME: "mysql-podbackup"
-  MYSQL_USER: "test-user"
-  MYSQL_PASSWORD: "test-user"
-  MYSQL_DATABASE: "testdb"
+  PGSQL_CONTAINER_IMAGE: "docker.io/bitnami/postgresql:14.9.0"
+  PGSQL_CONTAINER_NAME: "pgsql-podbackup"
 
 dotenv: ['test/.env']
 
@@ -18,6 +24,10 @@ tasks:
   build:
     cmds:
       - go build -o test/podbackup -v
+
+  build-podbackup-container:
+    cmds:
+      - podman build -t {{.PODBACKUP_CONTAINER_IMAGE}} .
 
   generate-test-data:
     cmds:
@@ -31,6 +41,7 @@ tasks:
       - podman stop -i {{.MINIO_CONTAINER_NAME}}
       - sleep 1
       - podman run -d --rm -p 9000:9000 -p 9001:9001 --name {{.MINIO_CONTAINER_NAME}} -e MINIO_ACCESS_KEY={{.MINIO_ACCESS_KEY}} -e MINIO_SECRET_KEY={{.MINIO_SECRET_KEY}} {{.MINIO_CONTAINER_IMAGE}} server /data --console-address ":9001"
+      - sleep 5
       - podman exec {{.MINIO_CONTAINER_NAME}} mc config host add localminio http://localhost:9000 {{.MINIO_ACCESS_KEY}} {{.MINIO_SECRET_KEY}}
       - podman exec {{.MINIO_CONTAINER_NAME}} mc mb localminio/{{.MINIO_BUCKET_NAME}}
 
@@ -51,6 +62,24 @@ tasks:
       AWS_KEY: "{{.MINIO_ACCESS_KEY}}"
       AWS_SECRET_KEY: "{{.MINIO_SECRET_KEY}}"
       S3_ENDPOINT: localhost:9000
+
+  test-backup-data-container:
+    deps: [generate-test-data,create-minio]
+    cmds:
+      - task: build-podbackup-container
+      - podman run -i --rm --name podbackup --env-host -v $(pwd)/test/backup-data:/test/backup-data:Z -v $(pwd)/test/restore-data:/test/restore-data:Z {{.PODBACKUP_CONTAINER_IMAGE}} backup
+      - podman run -i --rm --name podbackup --env-host -v $(pwd)/test/backup-data:/test/backup-data:Z -v $(pwd)/test/restore-data:/test/restore-data:Z {{.PODBACKUP_CONTAINER_IMAGE}} restore
+      - podman run -i --rm --name podbackup --env-host -v $(pwd)/test/backup-data:/test/backup-data:Z -v $(pwd)/test/restore-data:/test/restore-data:Z {{.PODBACKUP_CONTAINER_IMAGE}} list
+      - if [[ $(diff -r test/backup-data/ test/restore-data) ]]; then echo "TEST FAILED - RESTORE != BACKUP"; else echo "TEST SUCCESSFUL"; fi
+      - podman stop -i {{.MINIO_CONTAINER_NAME}}      
+    env:
+      AWS_BUCKET: "{{.MINIO_BUCKET_NAME}}"
+      DIR_TO_BACKUP: "/test/backup-data/"
+      DIR_TO_RESTORE: "/test/restore-data/"
+      S3_BUCKET_FOLDER: "test-data"
+      AWS_KEY: "{{.MINIO_ACCESS_KEY}}"
+      AWS_SECRET_KEY: "{{.MINIO_SECRET_KEY}}"
+      S3_ENDPOINT: "{{.CLI_ARGS}}:9000"
 
   create-mysql:
     cmds:
@@ -88,3 +117,125 @@ tasks:
       MYSQL_USER: root
       MYSQL_PASSWORD: "{{.MYSQL_PASSWORD}}"
       MYSQL_HOST: "127.0.0.1"
+
+  test-backup-mysql-container:
+    deps: [create-minio,create-mysql] 
+    cmds:
+      - task: build-podbackup-container
+      - task: generate-mysql-data
+      - podman run -i --rm --name podbackup --env-host -v $(pwd)/test/backup-data:/test/backup-data:Z -v $(pwd)/test/restore-data:/test/restore-data:Z {{.PODBACKUP_CONTAINER_IMAGE}} backup-sql
+      - podman stop -i {{.MYSQL_CONTAINER_IMAGE}}
+      - task: create-mysql
+      - podman run -i --rm --name podbackup --env-host -v $(pwd)/test/backup-data:/test/backup-data:Z -v $(pwd)/test/restore-data:/test/restore-data:Z {{.PODBACKUP_CONTAINER_IMAGE}} restore-sql
+      - podman exec {{.MYSQL_CONTAINER_NAME}} mysql -h 127.0.0.1 -P 3306 -u root --password={{.MYSQL_PASSWORD}} -e "use {{.MYSQL_DATABASE}}; SELECT * FROM testdata;"
+      - podman stop -i {{.MYSQL_CONTAINER_IMAGE}}
+    env:
+      AWS_BUCKET: "{{.MINIO_BUCKET_NAME}}"
+      DIR_TO_BACKUP: "test/backup-data/"
+      DIR_TO_RESTORE: "test/restore-data/"
+      S3_BUCKET_FOLDER: "test-data"
+      AWS_KEY: "{{.MINIO_ACCESS_KEY}}"
+      AWS_SECRET_KEY: "{{.MINIO_SECRET_KEY}}"
+      S3_ENDPOINT: "{{.CLI_ARGS}}:9000"
+      MYSQL_USER: root
+      MYSQL_PASSWORD: "{{.MYSQL_PASSWORD}}"
+      MYSQL_HOST: "{{.CLI_ARGS}}"
+
+  create-pgsql:
+    cmds:
+      - podman stop -i {{.PGSQL_CONTAINER_NAME}}
+      - sleep 1
+      - podman run -d --rm -p 5432:5432 --name {{.PGSQL_CONTAINER_NAME}} -e POSTGRES_DATABASE={{.PGSQL_DATABASE}} -e POSTGRES_USER={{.PGSQL_USER}} -e POSTGRES_PASSWORD={{.PGSQL_PASSWORD}} {{.PGSQL_CONTAINER_IMAGE}}
+      - sleep 15
+
+  generate-pgsql-data:
+    cmds:
+      - podman exec -e PGPASSWORD={{.PGSQL_PASSWORD}} {{.PGSQL_CONTAINER_NAME}} psql -h 127.0.0.1 -p 5432 -U {{.PGSQL_USER}} --command="CREATE TABLE IF NOT EXISTS testdata (id INTEGER PRIMARY KEY, testtext TEXT);" --dbname="{{.PGSQL_DATABASE}}"
+      - podman exec -e PGPASSWORD={{.PGSQL_PASSWORD}} {{.PGSQL_CONTAINER_NAME}} psql -h 127.0.0.1 -p 5432 -U {{.PGSQL_USER}} --command="INSERT INTO testdata (id, testtext) VALUES('1', 'testtext1');" --dbname="{{.PGSQL_DATABASE}}"
+      - podman exec -e PGPASSWORD={{.PGSQL_PASSWORD}} {{.PGSQL_CONTAINER_NAME}} psql -h 127.0.0.1 -p 5432 -U {{.PGSQL_USER}} --command="INSERT INTO testdata (id, testtext) VALUES('2', 'testtext2');" --dbname="{{.PGSQL_DATABASE}}"
+
+  test-backup-pgsql:
+    deps: [build,create-minio] 
+    cmds:
+      - task: create-pgsql
+      - task: generate-pgsql-data
+      - test/podbackup backup-pgsql
+      - task: create-pgsql
+      - test/podbackup restore-pgsql
+      - podman exec -e PGPASSWORD={{.PGSQL_PASSWORD}} {{.PGSQL_CONTAINER_NAME}} psql -h 127.0.0.1 -p 5432 -U {{.PGSQL_USER}} --command="SELECT * FROM testdata;" --dbname="{{.PGSQL_DATABASE}}"
+      - podman stop -i {{.PGSQL_CONTAINER_NAME}}
+    env:
+      AWS_BUCKET: "{{.MINIO_BUCKET_NAME}}"
+      DIR_TO_BACKUP: "test/backup-data/"
+      DIR_TO_RESTORE: "test/restore-data/"
+      S3_BUCKET_FOLDER: "test-data"
+      AWS_KEY: "{{.MINIO_ACCESS_KEY}}"
+      AWS_SECRET_KEY: "{{.MINIO_SECRET_KEY}}"
+      S3_ENDPOINT: localhost:9000
+      PGSQL_DATABASE: "{{.PGSQL_DATABASE}}"
+      PGSQL_USER: "{{.PGSQL_USER}}"
+      PGSQL_PASSWORD: "{{.PGSQL_PASSWORD}}"
+      PGSQL_HOST: "127.0.0.1"
+
+  test-backup-pgsql-container:
+    deps: [create-minio,create-pgsql] 
+    cmds:
+      - task: build-podbackup-container
+      - task: generate-pgsql-data
+      - podman run -i --rm --name podbackup --env-host -v $(pwd)/test/backup-data:/test/backup-data:Z -v $(pwd)/test/restore-data:/test/restore-data:Z {{.PODBACKUP_CONTAINER_IMAGE}} backup-pgsql
+      - task: create-pgsql
+      - podman run -i --rm --name podbackup --env-host -v $(pwd)/test/backup-data:/test/backup-data:Z -v $(pwd)/test/restore-data:/test/restore-data:Z {{.PODBACKUP_CONTAINER_IMAGE}} restore-pgsql
+      - podman exec -e PGPASSWORD={{.PGSQL_PASSWORD}} {{.PGSQL_CONTAINER_NAME}} psql -h 127.0.0.1 -p 5432 -U {{.PGSQL_USER}} --command="SELECT * FROM testdata;" --dbname="{{.PGSQL_DATABASE}}"
+      - podman stop -i {{.PGSQL_CONTAINER_NAME}}
+    env:
+      AWS_BUCKET: "{{.MINIO_BUCKET_NAME}}"
+      DIR_TO_BACKUP: "/test/backup-data/"
+      DIR_TO_RESTORE: "/test/restore-data/"
+      S3_BUCKET_FOLDER: "test-data"
+      AWS_KEY: "{{.MINIO_ACCESS_KEY}}"
+      AWS_SECRET_KEY: "{{.MINIO_SECRET_KEY}}"
+      S3_ENDPOINT: "{{.CLI_ARGS}}:9000"
+      PGSQL_DATABASE: "{{.PGSQL_DATABASE}}"
+      PGSQL_USER: "{{.PGSQL_USER}}"
+      PGSQL_PASSWORD: "{{.PGSQL_PASSWORD}}"
+      PGSQL_HOST: "{{.CLI_ARGS}}"      
+
+  backup-pgsql:
+    cmds:
+      - task: build
+      - test/podbackup backup-pgsql
+    env:
+      AWS_BUCKET: "{{.MINIO_BUCKET_NAME}}"
+      DIR_TO_BACKUP: "test/backup-data/"
+      DIR_TO_RESTORE: "test/restore-data/"
+      S3_BUCKET_FOLDER: "test-data"
+      AWS_KEY: "{{.MINIO_ACCESS_KEY}}"
+      AWS_SECRET_KEY: "{{.MINIO_SECRET_KEY}}"
+      S3_ENDPOINT: localhost:9000
+      PGSQL_DATABASE: "{{.PGSQL_DATABASE}}"
+      PGSQL_USER: "{{.PGSQL_USER}}"
+      PGSQL_PASSWORD: "{{.PGSQL_PASSWORD}}"
+      PGSQL_HOST: "127.0.0.1"
+
+  restore-pgsql:
+    cmds:
+      - task: build
+      - test/podbackup restore-pgsql
+    env:
+      AWS_BUCKET: "{{.MINIO_BUCKET_NAME}}"
+      DIR_TO_BACKUP: "test/backup-data/"
+      DIR_TO_RESTORE: "test/restore-data/"
+      S3_BUCKET_FOLDER: "test-data"
+      AWS_KEY: "{{.MINIO_ACCESS_KEY}}"
+      AWS_SECRET_KEY: "{{.MINIO_SECRET_KEY}}"
+      S3_ENDPOINT: localhost:9000
+      PGSQL_DATABASE: "{{.PGSQL_DATABASE}}"
+      PGSQL_USER: "{{.PGSQL_USER}}"
+      PGSQL_PASSWORD: "{{.PGSQL_PASSWORD}}"
+      PGSQL_HOST: "127.0.0.1"
+
+  create-all-containers:
+    deps: [build,create-minio,create-pgsql,create-mysql,generate-test-data]
+    cmds:
+      - task: generate-pgsql-data
+      - task: generate-mysql-data
