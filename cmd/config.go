@@ -21,6 +21,7 @@ type backupConfig struct {
 	backupInverval    time.Duration
 	pruneInverval     time.Duration
 	filesKeep         int
+	skipPath          string
 	forceRestore      bool
 	archiveType       string
 	s3SyncParallelism int
@@ -44,6 +45,7 @@ func setDefaultConfig() backupConfig {
 		backupInverval:    3600000000000,
 		pruneInverval:     7200000000000,
 		filesKeep:         3,
+		skipPath:          "",
 		forceRestore:      false,
 		archiveType:       "zip",
 		s3SyncParallelism: 3,
@@ -150,6 +152,12 @@ func getConfig() (backupConfigParams backupConfig, backupCredentials backupCreds
 		currentConfig.pruneInverval = parsedInterval(pruneinvervalenv)
 	} else {
 		log.Println("PRUNE_INTERVAL environment variable is not set, using the default", currentConfig.pruneInverval)
+	}
+
+	if skippathenv := os.Getenv("SKIP_PATH"); skippathenv != "" {
+		currentConfig.skipPath = skippathenv
+	} else {
+		log.Println("SKIP_PATH environment variable is not set, backup all files")
 	}
 
 	if forcerestoreenv := os.Getenv("FORCE_RESTORE"); forcerestoreenv != "" {

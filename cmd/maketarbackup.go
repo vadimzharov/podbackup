@@ -10,26 +10,34 @@ import (
 	"strings"
 )
 
-func makeTarBackup(backupdirpath string, backupfilename string) {
+// Function makeTarBackup creates a tar archive from the specified <backupDirPath> directory as specified file <backupFileName>.tar
 
-	err := os.RemoveAll(filepath.Dir(backupfilename))
+func makeTarBackup(backupDirPath string, backupFileName string) {
+
+	// Clean up
+
+	err := os.RemoveAll(filepath.Dir(backupFileName))
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
 
-	err = os.Mkdir(filepath.Dir(backupfilename), os.ModePerm)
+	// Create directory to store file with backup
+
+	err = os.Mkdir(filepath.Dir(backupFileName), os.ModePerm)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
 
-	log.Println("Making TAR archive from", backupdirpath, "to", backupfilename)
+	log.Println("Making TAR archive from", backupDirPath, "to", backupFileName)
 
-	localArchive, err := os.Create(backupfilename)
+	// Create file with backup
+
+	localArchive, err := os.Create(backupFileName)
 
 	if err != nil {
-		log.Println("Failed to create localfile ", backupfilename, err)
+		log.Println("Failed to create local file with archive", backupFileName, err)
 		panic(err)
 	}
 
@@ -48,45 +56,50 @@ func makeTarBackup(backupdirpath string, backupfilename string) {
 
 	defer tarWriter.Close()
 
-	filepath.Walk(backupdirpath, func(file string, fi os.FileInfo, err error) error {
+	filepath.Walk(backupDirPath, func(file string, fi os.FileInfo, err error) error {
 
 		if err != nil {
 			return err
 		}
 
-		// Get file header
-		header, err := tar.FileInfoHeader(fi, fi.Name())
+		if currentConfig.skipPath != "" && strings.Contains(filepath.Join(file), currentConfig.skipPath) {
+			println("Skipping file ", filepath.Join(file), "because it is in SKIP_PATH")
+		} else {
 
-		if err != nil {
-			return err
-		}
+			// Get file header
+			header, err := tar.FileInfoHeader(fi, fi.Name())
 
-		// Modify header to backup relative path
-		header.Name = filepath.Join(strings.TrimPrefix(file, backupdirpath))
+			if err != nil {
+				return err
+			}
 
-		hdrerr := tarWriter.WriteHeader(header)
+			// Modify header to backup relative path
+			header.Name = filepath.Join(strings.TrimPrefix(file, backupDirPath))
 
-		if hdrerr != nil {
-			panic(err)
-		}
+			hdrerr := tarWriter.WriteHeader(header)
 
-		if fi.IsDir() {
-			return nil
-		}
+			if hdrerr != nil {
+				panic(err)
+			}
 
-		f1, err := os.Open(file)
-		if err != nil {
-			panic(err)
-		}
-		defer f1.Close()
+			if fi.IsDir() {
+				return nil
+			}
 
-		if _, err := io.Copy(tarWriter, f1); err != nil {
-			panic(err)
+			f1, err := os.Open(file)
+			if err != nil {
+				panic(err)
+			}
+			defer f1.Close()
+
+			if _, err := io.Copy(tarWriter, f1); err != nil {
+				panic(err)
+			}
+
 		}
 
 		return nil
-	})
 
-	//tarWriter.Close()
+	})
 
 }
